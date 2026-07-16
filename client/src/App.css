@@ -42,7 +42,7 @@ button { cursor:pointer; }
 .auth-story { position:relative; overflow:hidden; color:var(--ink); background:radial-gradient(circle at 15% 85%,#175c47 0,transparent 35%),radial-gradient(circle at 90% 5%,#164f3e 0,transparent 30%),linear-gradient(145deg,#071711,#0c2a20); padding:46px 7vw; display:flex; flex-direction:column; justify-content:space-between; }
 .auth-story::after { content:''; position:absolute; width:520px; height:520px; border:1px solid rgba(127,225,181,.18); border-radius:50%; right:-230px; bottom:-190px; box-shadow:0 0 0 70px rgba(127,225,181,.04),0 0 0 140px rgba(127,225,181,.03); }
 .hero-copy { position:relative; z-index:1; max-width:590px; }
-.hero-copy h1 { font:600 clamp(42px,5vw,72px)/1.04 'Manrope',sans-serif; letter-spacing:-3.5px; margin:15px 0 25px; }
+.hero-copy h1 { color:#f4faf7; font:600 clamp(42px,5vw,72px)/1.04 'Manrope',sans-serif; letter-spacing:-3.5px; margin:15px 0 25px; text-shadow:0 2px 20px rgba(0,0,0,.12); }
 .hero-copy>p:last-child { color:#aec8bd; font-size:18px; line-height:1.65; max-width:530px; }
 .trust-row { position:relative; z-index:1; display:flex; gap:30px; color:#abc9bc; font-size:12px; font-weight:600; }
 .trust-row span::before { content:'✓'; color:var(--green); margin-right:7px; }
