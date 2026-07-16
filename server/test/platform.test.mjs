@@ -3,29 +3,81 @@ import test from 'node:test';
 import { emptyDatabase } from '../dist/domain/types.js';
 import { MemoryStore } from '../dist/persistence/jsonStore.js';
 import { MockBeamWallet } from '../dist/services/beamWallet.js';
+import { MemoryEmailService } from '../dist/services/emailService.js';
 import { PlatformService } from '../dist/services/platformService.js';
+
+async function registerVerified(platform, emailService, registration) {
+  const pending = await platform.register(registration);
+  assert.equal(pending.requiresVerification, true);
+  const code = emailService.latestCode(registration.email.toLowerCase());
+  assert.match(code, /^\d{6}$/);
+  return platform.verifyEmail(registration.email, code);
+}
 
 async function fixture() {
   const store = new MemoryStore(emptyDatabase());
-  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow');
-  const freelancerAuth = await platform.register({
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', emailService);
+  const freelancerAuth = await registerVerified(platform, emailService, {
     name: 'Amina Freelancer', email: 'amina@example.com', password: 'secure-pass-1',
     role: 'freelancer', walletAddress: 'beam-freelancer-wallet-address',
   });
-  const clientAuth = await platform.register({
+  const clientAuth = await registerVerified(platform, emailService, {
     name: 'Bol Client', email: 'bol@example.com', password: 'secure-pass-2',
     role: 'client', walletAddress: 'beam-client-wallet-address',
   });
-  return { platform, store, freelancerAuth, clientAuth };
+  return { platform, store, emailService, freelancerAuth, clientAuth };
 }
 
-test('registration hashes passwords and returns an authenticated session', async () => {
+test('registration hashes passwords and creates a session only after email verification', async () => {
   const { platform, store, freelancerAuth } = await fixture();
   const stored = store.read().users.find((user) => user.id === freelancerAuth.user.id);
   assert.ok(stored);
   assert.notEqual(stored.passwordHash, 'secure-pass-1');
   assert.match(stored.passwordHash, /^[a-f0-9]+:[a-f0-9]+$/);
+  assert.equal(stored.emailVerifiedAt !== undefined, true);
   assert.deepEqual(platform.authenticate(freelancerAuth.token), freelancerAuth.user);
+});
+
+test('email verification codes are hashed, expiring, and reject incorrect attempts', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', emailService);
+  await platform.register({ name: 'Pending User', email: 'pending@example.com', password: 'secure-pass-3', role: 'client', walletAddress: 'beam-pending-wallet-address' });
+  const deliveredCode = emailService.latestCode('pending@example.com');
+  assert.ok(deliveredCode);
+  assert.equal(store.read().emailVerifications[0].codeHash.includes(deliveredCode), false);
+  await assert.rejects(platform.login('pending@example.com', 'secure-pass-3'), /Verify your email/);
+  const incorrectCode = deliveredCode === '000000' ? '000001' : '000000';
+  await assert.rejects(platform.verifyEmail('pending@example.com', incorrectCode), /invalid or expired/);
+  const authenticated = await platform.verifyEmail('pending@example.com', deliveredCode);
+  assert.equal(authenticated.user.emailVerified, true);
+});
+
+test('registration rejects forged Beam address strings', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', emailService);
+  await assert.rejects(platform.register({ name: 'Forged User', email: 'forged@example.com', password: 'secure-pass-4', role: 'client', walletAddress: 'not-a-wallet-token' }), /not valid/);
+  assert.equal(store.read().users.length, 0);
+});
+
+test('verification codes expire and lock after five incorrect attempts', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', emailService);
+  await platform.register({ name: 'Expired User', email: 'expired@example.com', password: 'secure-pass-5', role: 'client', walletAddress: 'beam-expired-wallet-address' });
+  const expiredCode = emailService.latestCode('expired@example.com');
+  store.mutate((database) => { database.emailVerifications[0].expiresAt = new Date(0).toISOString(); });
+  await assert.rejects(platform.verifyEmail('expired@example.com', expiredCode), /invalid or expired/);
+
+  await platform.register({ name: 'Locked User', email: 'locked@example.com', password: 'secure-pass-6', role: 'client', walletAddress: 'beam-locked-wallet-address' });
+  const realCode = emailService.latestCode('locked@example.com');
+  const wrongCode = realCode === '111111' ? '222222' : '111111';
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await assert.rejects(platform.verifyEmail('locked@example.com', wrongCode), /invalid or expired/);
+  }
+  await assert.rejects(platform.verifyEmail('locked@example.com', realCode), /Too many incorrect codes/);
 });
 
 test('duplicate accounts and invalid credentials are rejected', async () => {
@@ -116,7 +168,8 @@ test('audit log records security and payment lifecycle events', async () => {
   });
   platform.approvePayment(clientAuth.user, payment.id);
   const actions = store.read().auditEvents.map((event) => event.action);
-  assert.ok(actions.includes('auth.register'));
+  assert.ok(actions.includes('auth.register_pending'));
+  assert.ok(actions.includes('auth.email_verified'));
   assert.ok(actions.includes('payment.create'));
   assert.ok(actions.includes('payment.approve'));
 });
