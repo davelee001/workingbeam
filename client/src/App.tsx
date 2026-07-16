@@ -161,6 +161,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   const [walletMode, setWalletMode] = useState('checking');
@@ -241,7 +242,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
           <button className={screen === 'payments' ? 'active' : ''} onClick={() => setScreen('payments')}>Payments</button>
           <button className={screen === 'wallet' ? 'active' : ''} onClick={() => setScreen('wallet')}>Wallet</button>
         </nav>
-        <div className="top-actions"><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>◌{unread > 0 && <b>{unread}</b>}</button><div className="profile"><div className="avatar">{initialUser.name.slice(0, 1)}</div><div><strong>{initialUser.name}</strong><small>{initialUser.role}</small></div></div><button className="logout" onClick={onLogout}>Sign out</button></div>
+        <div className="top-actions"><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>◌{unread > 0 && <b>{unread}</b>}</button><div className="profile"><div className="avatar">{initialUser.name.slice(0, 1)}</div><div><strong>{initialUser.name}</strong><small>{initialUser.role}</small></div></div><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
       {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
@@ -300,6 +301,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
           <section className="wallet-security"><div>✓</div><div><h3>Wallet security</h3><p>WorkingBeam never asks for your Beam seed phrase. Live wallet credentials remain server-side and should be protected with TLS, ACL, and IP allowlisting.</p></div></section>
         </>}
       </main>
+      {showLogoutConfirm && <div className="modal-backdrop" onMouseDown={() => setShowLogoutConfirm(false)}><section className="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="signout-title" onMouseDown={(event) => event.stopPropagation()}><div className="confirm-icon">↗</div><h2 id="signout-title">Are you sure you want to sign out?</h2><p>Your current session will end. You can sign back in at any time.</p><div className="confirm-actions"><button className="secondary" onClick={() => setShowLogoutConfirm(false)}>Cancel</button><button className="signout-confirm" onClick={onLogout}>Sign out</button></div></section></div>}
       {showCreate && <div className="modal-backdrop" onMouseDown={() => setShowCreate(false)}><section className="modal" onMouseDown={(event) => event.stopPropagation()}><div className="aside-title"><div><p className="eyebrow dark">New request</p><h2>Request a payment</h2></div><button onClick={() => setShowCreate(false)}>×</button></div><form onSubmit={createPayment}><label>Client email<input type="email" required value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} placeholder="client@example.com" /></label><label>Project or milestone<input required minLength={3} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Landing page design" /></label><label>Description<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What is included in this payment?" /></label><div className="form-row"><label>Amount (BEAM)<input type="number" required min="0.00000001" step="0.00000001" value={form.amountBeam} onChange={(e) => setForm({ ...form, amountBeam: e.target.value })} /></label><label>Due date<input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} /></label></div><button className="primary full" disabled={busy === 'create'}>{busy === 'create' ? 'Creating…' : 'Send payment request'}</button></form></section></div>}
     </div>
   );
