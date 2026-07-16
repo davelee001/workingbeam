@@ -45,7 +45,7 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 
 - Freelancer and client registration
 - Cloudflare Turnstile CAPTCHA on registration, sign-in, and verification-code resend
-- Six-digit email activation codes delivered through SMTP, stored only as salted hashes, and protected by expiry, resend throttling, and attempt limits
+- Six-digit email activation codes delivered through SMTP, stored only as HMAC hashes protected by a server-side pepper, and guarded by expiry, resend throttling, and attempt limits
 - Password hashing with a unique salt and Node.js `scrypt`
 - Random bearer sessions stored as SHA-256 hashes with expiration
 - Role and resource-level authorization
@@ -210,7 +210,7 @@ cp client/.env.example client/.env
 
 The examples use Cloudflare's official localhost-only test keys, console email delivery, and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
 
-For a real deployment, set `NODE_ENV=production`, configure matching production Turnstile keys, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if production SMTP, Turnstile, or Beam Wallet configuration is missing.
+For a real deployment, set `NODE_ENV=production`, configure matching production Turnstile keys, a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if required production security configuration is missing.
 
 ### Run
 
@@ -265,6 +265,7 @@ The test suite covers CAPTCHA provider validation, email-code hashing, expiry an
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
 | `TURNSTILE_SECRET_KEY` | development test key | Secret used by the API for Siteverify; a real key is mandatory in production |
 | `TURNSTILE_EXPECTED_HOSTNAME` | empty | Exact production hostname expected in a valid Turnstile response |
+| `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
 | `REACT_APP_TURNSTILE_SITE_KEY` | development test key | Public browser widget key, configured in `client/.env` at build time |
 | `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
 | `EMAIL_FROM` | example sender | Verified sender used for activation messages |
