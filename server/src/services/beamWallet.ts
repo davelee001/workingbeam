@@ -11,8 +11,15 @@ export interface WalletStatus {
   rawStatus: string;
 }
 
+export interface WalletAddressValidation {
+  valid: boolean;
+  type?: string;
+  paymentsRemaining?: number;
+}
+
 export interface BeamWallet {
   readonly mode: 'mock' | 'live';
+  validateAddress(address: string): Promise<WalletAddressValidation>;
   send(transfer: WalletTransfer): Promise<string>;
   transactionStatus(transactionId: string): Promise<WalletStatus>;
   health(): Promise<{ available: boolean; mode: 'mock' | 'live'; detail: string }>;
@@ -20,6 +27,10 @@ export interface BeamWallet {
 
 export class MockBeamWallet implements BeamWallet {
   readonly mode = 'mock' as const;
+
+  async validateAddress(address: string): Promise<WalletAddressValidation> {
+    return { valid: /^(mock|beam)-[a-z0-9-]{10,}$/i.test(address), type: 'development' };
+  }
 
   async send(): Promise<string> {
     return `mock-${randomUUID().replace(/-/g, '')}`;
@@ -70,6 +81,17 @@ export class BeamWalletRpc implements BeamWallet {
     return payload.result;
   }
 
+  async validateAddress(address: string): Promise<WalletAddressValidation> {
+    const result = await this.call('validate_address', { address });
+    const object = (result ?? {}) as Record<string, unknown>;
+    const payments = typeof object.payments === 'number' ? object.payments : undefined;
+    return {
+      valid: object.is_valid === true && (payments === undefined || payments > 0),
+      type: typeof object.type === 'string' ? object.type : undefined,
+      paymentsRemaining: payments,
+    };
+  }
+
   async send(transfer: WalletTransfer): Promise<string> {
     const value = Math.round(transfer.amountBeam * this.grothPerBeam);
     const result = await this.call('tx_send', {
@@ -114,7 +136,10 @@ export class BeamWalletRpc implements BeamWallet {
 
 export function createBeamWallet(): BeamWallet {
   const endpoint = process.env.BEAM_WALLET_API_URL;
-  if (!endpoint) return new MockBeamWallet();
+  if (!endpoint) {
+    if (process.env.NODE_ENV === 'production') throw new Error('BEAM_WALLET_API_URL is required in production');
+    return new MockBeamWallet();
+  }
   return new BeamWalletRpc(
     endpoint,
     process.env.BEAM_WALLET_API_KEY,
