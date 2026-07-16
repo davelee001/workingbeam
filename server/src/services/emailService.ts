@@ -46,9 +46,11 @@ export class SmtpEmailService implements EmailService {
 
   constructor(private readonly smtpUrl: string, private readonly from: string) {
     this.transporter = nodemailer.createTransport(smtpUrl, {
+      requireTLS: true,
       connectionTimeout: 10_000,
       greetingTimeout: 10_000,
       socketTimeout: 20_000,
+      tls: { rejectUnauthorized: true },
     });
   }
 
