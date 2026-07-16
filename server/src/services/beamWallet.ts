@@ -140,6 +140,10 @@ export function createBeamWallet(): BeamWallet {
     if (process.env.NODE_ENV === 'production') throw new Error('BEAM_WALLET_API_URL is required in production');
     return new MockBeamWallet();
   }
+  if (process.env.NODE_ENV === 'production') {
+    if (!endpoint.startsWith('https://')) throw new Error('BEAM_WALLET_API_URL must use HTTPS in production');
+    if (!process.env.BEAM_WALLET_API_KEY?.trim()) throw new Error('BEAM_WALLET_API_KEY is required in production');
+  }
   return new BeamWalletRpc(
     endpoint,
     process.env.BEAM_WALLET_API_KEY,
