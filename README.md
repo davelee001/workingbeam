@@ -44,12 +44,15 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 ## Implemented
 
 - Freelancer and client registration
+- Cloudflare Turnstile CAPTCHA on registration, sign-in, and verification-code resend
+- Six-digit email activation codes delivered through SMTP, stored only as salted hashes, and protected by expiry, resend throttling, and attempt limits
 - Password hashing with a unique salt and Node.js `scrypt`
 - Random bearer sessions stored as SHA-256 hashes with expiration
 - Role and resource-level authorization
 - Payment request creation for an existing client account
 - Client approval and escrow funding
 - Beam Wallet API adapter using JSON-RPC 2.0 over HTTP
+- Server-side Beam address and payment-token validation through `validate_address` before account activation and transfers
 - Local mock wallet for development without real funds
 - Transaction submission and explicit confirmation refresh
 - Freelancer delivery notes
@@ -98,7 +101,7 @@ The Wallet screen presents the Beam-facing view:
 
 The notification panel is available from every authenticated screen. It displays payment, delivery, dispute, release, and confirmation events addressed to the signed-in account.
 
-The interface uses a balanced forest-green system: dark green anchors the welcome, wallet, and empty-state areas while navigation, data cards, forms, and transaction tables remain light and low-glare.
+The interface balances dark forest-green product areas with a visible Beam-pink header and low-glare pink surfaces for navigation, cards, authentication, and forms.
 
 ## Payment Lifecycle
 
@@ -116,9 +119,9 @@ pending
 
 ## Beam Integration
 
-The production adapter follows the official [Beam Wallet Protocol API](https://www.beam.mw/docs/core-tech/beam-wallet-protocol-api), which exposes JSON-RPC 2.0 methods such as `tx_send`, `tx_status`, and `wallet_status`. WorkingBeam uses HTTP mode at the configured wallet endpoint.
+The production adapter follows the official [Beam Wallet Protocol API](https://www.beam.mw/docs/core-tech/beam-wallet-protocol-api), which exposes JSON-RPC 2.0 methods such as `validate_address`, `tx_send`, `tx_status`, and `wallet_status`. WorkingBeam uses HTTP mode at the configured wallet endpoint. Browser-provided Beam strings are never accepted by length alone: live mode asks the wallet to validate their curve data and remaining payment-token capacity.
 
-When `BEAM_WALLET_API_URL` is omitted, the application uses a deterministic local mock:
+When `BEAM_WALLET_API_URL` is omitted in development, the application uses a deterministic local mock. Production fails closed instead of starting in mock mode:
 
 - Transfers receive a generated mock transaction ID.
 - The first confirmation refresh marks the transaction confirmed.
@@ -140,6 +143,8 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **API:** Node.js, Express, TypeScript
 - **Persistence:** atomic JSON store for the MVP
 - **Authentication:** scrypt password hashes and expiring bearer sessions
+- **Human verification:** Cloudflare Turnstile with mandatory server-side Siteverify checks
+- **Email:** SMTP through Nodemailer with hashed, expiring activation codes
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
 - **Tests:** Node.js built-in test runner
 
@@ -193,15 +198,19 @@ PowerShell:
 
 ```powershell
 Copy-Item server/.env.example server/.env
+Copy-Item client/.env.example client/.env
 ```
 
 Bash:
 
 ```bash
 cp server/.env.example server/.env
+cp client/.env.example client/.env
 ```
 
-An empty `BEAM_WALLET_API_URL` enables mock mode. Data is saved to `server/data/workingbeam.json` and excluded from Git.
+The examples use Cloudflare's official localhost-only test keys, console email delivery, and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
+
+For a real deployment, set `NODE_ENV=production`, configure matching production Turnstile keys, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if production SMTP, Turnstile, or Beam Wallet configuration is missing.
 
 ### Run
 
@@ -217,16 +226,17 @@ The client must exist before a freelancer can address a payment request to the c
 
 ### Local Workflow Walkthrough
 
-1. Register a **client** with a Beam wallet address or test token.
-2. Sign out and register a **freelancer** using a different email.
-3. From Overview or Payments, create a request using the client's email.
-4. Sign in as the client and approve the request.
-5. Fund escrow. In mock mode, a mock Beam transaction ID is generated.
-6. Select **Check confirmation** to move the request to `funded`.
-7. Sign in as the freelancer and submit a delivery note or work link.
-8. Sign in as the client and release payment.
-9. Refresh the release transaction to confirm it and complete the request.
-10. Review the transaction on the Wallet screen and notifications from the top navigation.
+1. Complete the CAPTCHA and register a **client** with a Beam wallet address or development token.
+2. Enter the six-digit email code. In development without SMTP, read it from the API console.
+3. Sign out, register a **freelancer** using a different email, and verify that email.
+4. From Overview or Payments, create a request using the client's email.
+5. Sign in as the client and approve the request.
+6. Fund escrow. In mock mode, a mock Beam transaction ID is generated.
+7. Select **Check confirmation** to move the request to `funded`.
+8. Sign in as the freelancer and submit a delivery note or work link.
+9. Sign in as the client and release payment.
+10. Refresh the release transaction to confirm it and complete the request.
+11. Review the transaction on the Wallet screen and notifications from the top navigation.
 
 ### Test and Build
 
@@ -235,11 +245,11 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers authentication, password storage, duplicate accounts, request creation, authorization, the complete escrow lifecycle, transaction confirmation, disputes, duplicate-action protection, notification creation, and audit events.
+The test suite covers CAPTCHA provider validation, email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, and audit events.
 
 ### Current Verification
 
-- 8 platform tests passing
+- 12 security and platform tests passing
 - Server TypeScript build passing
 - React production build passing
 - Responsive navigation available on desktop and mobile
@@ -252,6 +262,12 @@ The test suite covers authentication, password storage, duplicate accounts, requ
 | `PORT` | `5000` | API listen port |
 | `CLIENT_ORIGIN` | any origin in development | Comma-separated allowed browser origins |
 | `DATA_FILE` | `./data/workingbeam.json` | Persistent MVP data file |
+| `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
+| `TURNSTILE_SECRET_KEY` | development test key | Secret used by the API for Siteverify; a real key is mandatory in production |
+| `TURNSTILE_EXPECTED_HOSTNAME` | empty | Exact production hostname expected in a valid Turnstile response |
+| `REACT_APP_TURNSTILE_SITE_KEY` | development test key | Public browser widget key, configured in `client/.env` at build time |
+| `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
+| `EMAIL_FROM` | example sender | Verified sender used for activation messages |
 | `BEAM_WALLET_API_URL` | empty | Live endpoint, for example `https://wallet.internal/api/wallet` |
 | `BEAM_WALLET_API_KEY` | empty | Wallet API ACL key |
 | `BEAM_ESCROW_ADDRESS` | empty | Custodial escrow wallet address/token |
@@ -266,7 +282,11 @@ The test suite covers authentication, password storage, duplicate accounts, requ
 |---|---|---|
 | `GET` | `/api/health` | API and wallet-adapter status |
 | `POST` | `/api/auth/register` | Create freelancer/client account |
-| `POST` | `/api/auth/login` | Create session |
+| `POST` | `/api/auth/verify-email` | Activate an account with the emailed six-digit code |
+| `POST` | `/api/auth/resend-verification` | Send a replacement code after CAPTCHA and cooldown |
+| `POST` | `/api/auth/login` | Create a session for a verified account |
+
+Registration and login bodies require a fresh `captchaToken`. Turnstile tokens are checked by the API and are never trusted based on browser rendering alone.
 
 ### Authenticated
 
@@ -298,7 +318,7 @@ The repository is a functional MVP, not a production custody deployment. Before 
 - Replace JSON storage with PostgreSQL and database transactions.
 - Store session and wallet secrets in a managed secret store.
 - Put the API behind HTTPS, a reverse proxy, and distributed rate limiting.
-- Add email/phone verification, MFA, password reset, and session management.
+- Add phone verification, MFA, password reset, and user-facing session management.
 - Connect the notification outbox to production email, SMS, and push providers.
 - Add signed webhooks or a background confirmation worker instead of manual refresh.
 - Add an administrator/arbitrator workflow for disputes and refunds.
