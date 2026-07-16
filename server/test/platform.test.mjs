@@ -62,6 +62,17 @@ test('registration rejects forged Beam address strings', async () => {
   assert.equal(store.read().users.length, 0);
 });
 
+test('paused email verification activates accounts without sending a code', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', emailService, 'test-verification-pepper', false);
+  const authenticated = await platform.register({ name: 'Temporary User', email: 'temporary@example.com', password: 'secure-pass-7', role: 'client', walletAddress: 'beam-temporary-wallet-address' });
+  assert.ok(authenticated.token);
+  assert.equal(authenticated.user.emailVerified, false);
+  assert.equal(emailService.deliveries.length, 0);
+  assert.deepEqual(platform.authenticate(authenticated.token), authenticated.user);
+});
+
 test('verification codes expire and lock after five incorrect attempts', async () => {
   const store = new MemoryStore(emptyDatabase());
   const emailService = new MemoryEmailService();
