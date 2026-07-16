@@ -67,12 +67,13 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 
 /* Dashboard */
 .dashboard-shell { min-height:100vh; }
-.topbar { height:70px; display:flex; align-items:center; gap:55px; padding:0 max(28px,5vw); background:rgba(255,255,255,.92); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; box-shadow:0 8px 30px rgba(24,53,43,.045); }
+.topbar { height:70px; display:flex; align-items:center; gap:55px; padding:0 max(28px,5vw); background:linear-gradient(90deg,rgba(253,232,240,.98),rgba(255,239,245,.98)); backdrop-filter:blur(14px); border-bottom:1px solid #e9c3d1; position:sticky; top:0; z-index:20; box-shadow:0 8px 30px rgba(111,49,72,.07); }
+.topbar .brand span { color:#d94f7d; }
 .topbar nav { display:flex; gap:30px; height:100%; align-items:center; }
 .topbar nav button { height:100%; display:flex; align-items:center; position:relative; padding:0; color:#74837c; border:0; background:none; font-size:13px; font-weight:600; }
 .topbar nav button:hover { color:var(--deep); }
 .topbar nav button.active { color:var(--ink); }
-.topbar nav button.active::after { content:''; position:absolute; height:2px; background:var(--green); bottom:0; left:0; right:0; }
+.topbar nav button.active::after { content:''; position:absolute; height:2px; background:#df668e; bottom:0; left:0; right:0; }
 .top-actions { margin-left:auto; display:flex; align-items:center; gap:15px; }
 .notification-button { position:relative; border:1px solid var(--line); color:#52655c; background:#f2f6f4; border-radius:50%; width:36px; height:36px; font-size:20px; }
 .notification-button:hover { background:var(--surface-raised); }
