@@ -86,11 +86,14 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
     event.preventDefault(); setError(''); setMessage(''); setLoading(true);
     try {
       if (registering) {
-        const result = await request<{ requiresVerification: true; email: string }>('/api/auth/register', undefined, {
+        const result = await request<{ requiresVerification: true; email: string } | { user: User; token: string }>('/api/auth/register', undefined, {
           method: 'POST', body: JSON.stringify(form),
         });
-        setVerificationEmail(result.email);
-        setMessage(`We sent a six-digit verification code to ${result.email}.`);
+        if ('token' in result) onAuthenticated(result.user, result.token);
+        else {
+          setVerificationEmail(result.email);
+          setMessage(`We sent a six-digit verification code to ${result.email}.`);
+        }
       } else {
         const result = await request<{ user: User; token: string }>('/api/auth/login', undefined, {
           method: 'POST', body: JSON.stringify({ email: form.email, password: form.password }),
@@ -340,7 +343,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
               <h2>{initialUser.name}</h2>
               <p>Your freelancer releases and account transactions use this Beam address.</p>
               <div className="address-box"><code>{initialUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(initialUser.walletAddress)}>Copy</button></div>
-              <div className="wallet-badges"><span>Private by default</span><span>Account verified</span></div>
+              <div className="wallet-badges"><span>Private by default</span><span>{initialUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
             </div>
             <div className="wallet-summary">
               <div><small>Protected now</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong></div>
