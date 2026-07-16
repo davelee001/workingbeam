@@ -46,8 +46,8 @@ button { cursor:pointer; }
 .hero-copy>p:last-child { color:#aec8bd; font-size:18px; line-height:1.65; max-width:530px; }
 .trust-row { position:relative; z-index:1; display:flex; gap:30px; color:#abc9bc; font-size:12px; font-weight:600; }
 .trust-row span::before { content:'✓'; color:var(--green); margin-right:7px; }
-.auth-panel { display:grid; place-items:center; padding:40px; background:linear-gradient(145deg,#f8faf8,#eef4f1); }
-.auth-card { padding:30px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.82); box-shadow:0 25px 70px rgba(26,57,45,.09); }
+.auth-panel { display:grid; place-items:center; padding:40px; background:linear-gradient(145deg,#fff4f7,#f9e8ef); }
+.auth-card { padding:30px; border:1px solid #ead5dd; border-radius:16px; background:rgba(255,248,251,.92); box-shadow:0 25px 70px rgba(86,40,57,.1); }
 .auth-card { width:min(440px,100%); }
 .auth-card h2 { font:700 32px 'Manrope'; letter-spacing:-1px; margin:8px 0; }
 .auth-card>.muted { margin:0 0 25px; line-height:1.5; }
@@ -59,7 +59,7 @@ input::placeholder,textarea::placeholder { color:#98a49e; }
 textarea { min-height:90px; resize:vertical; }
 input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(31,184,121,.1); }
 .role-picker { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.role-picker button { text-align:left; display:grid; gap:4px; border:1px solid var(--line); background:white; border-radius:9px; padding:12px; color:var(--ink); }
+.role-picker button { text-align:left; display:grid; gap:4px; border:1px solid var(--line); background:#fff9fb; border-radius:9px; padding:12px; color:var(--ink); }
 .role-picker button.selected { border-color:var(--green); background:#effaf4; box-shadow:inset 0 0 0 1px rgba(24,169,111,.25); }
 .role-picker small { color:var(--muted); font-size:11px; }
 .auth-switch { color:var(--muted); text-align:center; font-size:13px; margin-top:20px; }
