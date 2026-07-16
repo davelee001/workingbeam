@@ -1,137 +1,150 @@
-# Working Beam - Structural Analysis Tool
+# Working Beam
 
-A full-stack web application for structural beam analysis and design supporting concrete (ACI 318) and steel (AISC) design codes.
+Working Beam is a full-stack structural beam analysis and preliminary design application. It calculates reactions, shear, bending moment, and elastic deflection, then performs reinforced-concrete checks using ACI 318-19 and structural-steel checks using AISC 360-22 LRFD.
 
-## ✨ Features
+> **Engineering notice:** This software is intended for education, development, and preliminary design. Results must be reviewed by a qualified structural engineer before they are used for construction or other safety-critical decisions.
 
-- **Intuitive Input Interface**: Easy-to-use forms for beam geometry, material properties, and loads
-- **Structural Analysis**: Automatic calculation of reactions, shear forces, and bending moments
-- **Design Checks**: Flexural, shear, and deflection verification
-- **Visual Diagrams**: Interactive charts showing shear force and bending moment diagrams
-- **Multiple Design Codes**: Support for both ACI 318 (concrete) and AISC (steel)
-- **Responsive Design**: Works on desktop and mobile devices
+## Features
 
-## 🛠️ Tech Stack
+- Reactions for simply supported beams and single-end cantilevers
+- Point loads, full-span uniform loads, and partial uniform loads
+- Shear-force and bending-moment diagrams
+- Numerical elastic-deflection integration for mixed load cases
+- Service-load results and strength-design load combinations
+- ACI 318-19 flexural reinforcement and shear-stirrup design
+- AISC 360-22 LRFD flexural, shear, compactness, and web-buckling checks
+- Deflection limit check using `L/360`
+- Interactive React charts for analysis results
+- Input validation with descriptive API errors
+- Closed-form benchmark tests for the calculation engine
 
-- **Backend**: Node.js 16+, Express.js, TypeScript
-- **Frontend**: React 18, TypeScript, Recharts, Tailwind CSS
-- **Development**: Concurrently for parallel server/client execution
-- **Build**: npm workspaces pattern
+## Analysis Scope
 
-## 📁 Project Structure
+### Supported systems
 
-```
+- One simply supported span with pin/roller end supports
+- One cantilever with a fixed support at either end
+- Prismatic members with constant material and section properties
+
+Continuous beams, middle supports, fixed-fixed beams, and other indeterminate systems are rejected rather than approximated with statics-only results.
+
+### Loads and units
+
+| Input | Unit | Notes |
+|---|---:|---|
+| Span and load position | m | Positions are measured from the left end |
+| Section width/depth | mm | RC depth is treated as effective depth `d` |
+| Point load | kN | Requires `position` |
+| Dead/live/distributed load | kN/m | Full span by default |
+| Stress (`fc`, `fy`) | MPa | Positive values only |
+| Elastic modulus (`E`) | GPa or MPa | Values up to 1000 are interpreted as GPa |
+| Reactions/shear | kN | Upward reaction is positive |
+| Moment | kN-m | Sagging moment is positive |
+| Deflection | mm | Reported as an absolute maximum |
+
+A partial uniform load can include `position` as its start and `endPosition` as its end. Load direction defaults to `down`.
+
+### Design assumptions
+
+- Service diagrams use the loads supplied by the request.
+- Strength demand is enveloped from `1.4D` and `1.2D + 1.6L`.
+- Loads typed as `point` or `distributed` are treated as already combined and use a factor of `1.0`.
+- Concrete design uses ACI 318-19 tension-controlled flexure, minimum/maximum longitudinal steel, one-way shear strength, and two-leg stirrup selection.
+- Steel design uses AISC 360-22 LRFD. Complete flange/web properties enable compactness and web shear-buckling checks.
+- A steel section with omitted flange/web properties uses a clearly reported solid-rectangular fallback.
+- A nonzero unbraced length requires section torsion/warping properties for a complete lateral-torsional buckling check; the application reports that check as unverified.
+
+## Technology
+
+- **Backend:** Node.js, Express, TypeScript
+- **Frontend:** React 18, TypeScript, Recharts
+- **Testing:** Node's built-in test runner
+- **Development:** Concurrent backend/frontend processes
+
+## Project Structure
+
+```text
 working-beam/
-├── .vscode/
-│   ├── tasks.json          # Development tasks
-│   └── launch.json         # Debug configurations
-├── server/                 # Express backend
-│   ├── src/
-│   │   ├── index.ts        # Server entry point
-│   │   └── utils/
-│   │       └── beamCalculations.ts
-│   ├── dist/               # Compiled JavaScript
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── BeamInputForm.tsx
-│   │   │   └── AnalysisResults.tsx
-│   │   ├── App.tsx
-│   │   └── index.tsx
-│   ├── public/
-│   ├── package.json
-│   └── .env
-├── .github/
-│   └── copilot-instructions.md
-├── package.json
-├── README.md
-└── .gitignore
+|-- client/
+|   |-- public/
+|   |-- src/
+|   |   |-- components/
+|   |   |   |-- AnalysisResults.tsx
+|   |   |   `-- BeamInputForm.tsx
+|   |   |-- App.tsx
+|   |   `-- index.tsx
+|   |-- package.json
+|   `-- tsconfig.json
+|-- server/
+|   |-- src/
+|   |   |-- types/cors.d.ts
+|   |   |-- utils/beamCalculations.ts
+|   |   `-- index.ts
+|   |-- test/beamCalculations.test.mjs
+|   |-- package.json
+|   `-- tsconfig.json
+|-- package.json
+`-- README.md
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- **Node.js**: Version 16.0 or higher
-- **npm**: Version 8.0 or higher
+- Node.js 18 or newer (Node.js 24 is supported)
+- npm 10 or newer
 
-### Installation
+### Install
 
-1. Install root dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+npm install --prefix server
+npm install --prefix client --legacy-peer-deps
+```
 
-2. Install server and client dependencies:
-   ```bash
-   cd server && npm install && cd ..
-   cd client && npm install --legacy-peer-deps && cd ..
-   ```
+For reproducible CI installs, replace `install` with `ci`.
 
-### Development
+### Run in development
 
-Start both servers:
 ```bash
 npm run dev
 ```
 
-Launches:
-- **Backend**: http://localhost:5000
-- **Frontend**: http://localhost:3000
+- Frontend: <http://localhost:3000>
+- API: <http://localhost:5000>
+- Health check: <http://localhost:5000/api/health>
 
-### Individual Commands
+Individual processes can be started with:
 
-- `npm run server:dev` - Start backend only
-- `npm run client:dev` - Start frontend only
-- `npm run build` - Build for production
-- `npm run start` - Run production server
+```bash
+npm run server:dev
+npm run client:dev
+```
 
-## 🔄 Workflow
+### Test and build
 
-The application implements the standard structural analysis workflow:
+```bash
+npm test --prefix server
+npm run build
+```
 
-### 1. Input Details
-- Beam geometry (span, width, depth in mm)
-- Material selection (concrete or steel)
-- Material properties (fc' for concrete, Fy for steel)
-- Loads (dead, live, distributed, point)
-- Support conditions (pin, roller, fixed)
+The server suite verifies reactions, point and uniform load diagrams, partial UDLs, cantilever equilibrium, numerical deflection against a closed-form solution, ACI reinforcement, AISC capacity, full analysis output, and invalid-input handling.
 
-### 2. Calculate Loads
-- Compute self-weight
-- Apply load factors per design code
-- Combine load cases
+To run the compiled API after a production build:
 
-### 3. Structural Analysis
-- Calculate reaction forces
-- Generate shear force diagram (V)
-- Generate bending moment diagram (M)
-- Compute deflections
+```bash
+npm start
+```
 
-### 4. Design Checks
-- **Flexural**: Mu ≤ φMn
-- **Shear**: Vu ≤ φVn  
-- **Deflection**: Δ ≤ Δallowable
-- **Serviceability**: Crack width, vibration
+## API
 
-### 5. Output & Redesign
-- View detailed calculations
-- Interactive diagrams with Recharts
-- Modify design and re-analyze
+### `GET /api/health`
 
-## 📊 API Documentation
+Returns the server status.
 
-### Endpoints
+### `POST /api/analyze`
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/health` | Server health check |
-| POST | `/api/analyze` | Beam analysis |
-
-### Request Example
+Concrete example:
 
 ```json
 {
@@ -143,7 +156,7 @@ The application implements the standard structural analysis workflow:
   "materials": {
     "type": "concrete",
     "fc": 30,
-    "E": 25000
+    "fy": 420
   },
   "loads": [
     {
@@ -159,76 +172,85 @@ The application implements the standard structural analysis workflow:
 }
 ```
 
-## 📋 Development Roadmap
+Point and partial distributed loads:
 
-### Phase 1: Foundation ✅
-- [x] Project scaffolding
-- [x] Basic UI structure
-- [x] Server setup
-- [ ] Basic calculations
+```json
+{
+  "loads": [
+    {
+      "type": "point",
+      "value": 40,
+      "position": 3,
+      "direction": "down"
+    },
+    {
+      "type": "distributed",
+      "value": 8,
+      "position": 1,
+      "endPosition": 4,
+      "direction": "down"
+    }
+  ]
+}
+```
 
-### Phase 2: Core Analysis
-- [ ] Reaction calculations
-- [ ] Shear/moment diagrams
-- [ ] Deflection methods
+The response contains:
 
-### Phase 3: Design Code
-- [ ] ACI 318 checks
-- [ ] AISC design
-- [ ] Load combinations
+- `reactions`: vertical and fixed-end reactions
+- `diagrams`: position, shear, moment, and deflection points
+- `maximumShear`, `maximumMoment`, and `maximumDeflection`
+- `designLoads`: factored maximum shear and moment
+- `checks`: flexure, shear, and deflection pass/fail values
+- `design`: ACI reinforcement details or AISC capacities and warnings
 
-### Phase 4: Advanced
-- [ ] Reinforcement design
-- [ ] Multiple spans
-- [ ] Report generation
+## Troubleshooting
 
-### Phase 5: Production
-- [ ] Testing suite
-- [ ] Optimization
-- [ ] Database
-- [ ] Cloud deployment
+### PowerShell blocks `npm.ps1`
 
-## 🏗️ Design Standards
+Use `npm.cmd` in place of `npm`, or update the current-user execution policy:
 
-- **ACI 318-19/22** - Structural Concrete
-- **AISC 360-22** - Structural Steel
-- **Future**: Eurocode 2/3, CSA standards
-
-## 🐛 Troubleshooting
-
-**PowerShell Execution Policy (Windows)**:
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-**Port Already in Use**:
-- Backend: Edit `PORT` in `server/.env`
-- Frontend: React default is 3000
+### Client dependency resolution fails
 
-**Dependency Issues**:
+The React 18/Create React App dependency tree uses legacy peer relationships:
+
 ```bash
-cd client && npm install --legacy-peer-deps
+npm install --prefix client --legacy-peer-deps
 ```
 
-## 📄 License
+### Port already in use
 
-MIT License
+- Set `PORT` for the backend; the default is `5000`.
+- Create React App uses port `3000` and will offer another port when run interactively.
 
-## 🤝 Contributing
+## Standards
 
-1. Create feature branch
-2. Make changes
-3. Run tests
-4. Submit PR
+- [ACI 318-19 (reapproved 2022)](https://www.concrete.org/store/productdetail.aspx?ItemID=318U19)
+- [ANSI/AISC 360-22](https://www.aisc.org/aisc/publications/current-standards/aisc-360/)
 
----
+## Roadmap
 
-**Status**: Early Development (Phase 1)  
-**Last Updated**: 2026-07-15
+- Matrix-stiffness analysis for continuous and indeterminate beams
+- Selected AISC shape database and complete lateral-torsional buckling design
+- Additional load combinations and jurisdiction-specific configuration
+- Concrete cracked-section serviceability calculations
+- Detailed calculation reports and export
+- Eurocode and CSA design modules
 
-## Repository Status (Automated)
+## License
 
-- **Commit count (main)**: 21 (includes scaffold & initial files)
-- **Last push**: 2026-07-16
+MIT
 
-If you need a different commit style (squashed commits, a single initial commit, or a release tag), tell me and I will prepare it and push accordingly.
+## Contributing
+
+1. Create a feature branch.
+2. Make focused changes with tests.
+3. Run `npm test --prefix server` and `npm run build`.
+4. Open a pull request describing the engineering assumptions affected.
+
+**Project status:** Core single-span analysis and preliminary ACI/AISC design implemented.
+
+**Last updated:** 2026-07-16
