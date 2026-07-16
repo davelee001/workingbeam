@@ -21,6 +21,7 @@ export interface User {
   role: UserRole;
   walletAddress: string;
   phone?: string;
+  emailVerifiedAt?: string;
   createdAt: string;
 }
 
@@ -31,7 +32,18 @@ export interface PublicUser {
   role: UserRole;
   walletAddress: string;
   phone?: string;
+  emailVerified: boolean;
   createdAt: string;
+}
+
+export interface EmailVerification {
+  id: string;
+  userId: string;
+  codeHash: string;
+  expiresAt: string;
+  attempts: number;
+  createdAt: string;
+  lastSentAt: string;
 }
 
 export interface Session {
@@ -91,6 +103,7 @@ export interface AuditEvent {
 
 export interface Database {
   users: User[];
+  emailVerifications: EmailVerification[];
   sessions: Session[];
   paymentRequests: PaymentRequest[];
   transactions: BeamTransaction[];
@@ -100,6 +113,7 @@ export interface Database {
 
 export const emptyDatabase = (): Database => ({
   users: [],
+  emailVerifications: [],
   sessions: [],
   paymentRequests: [],
   transactions: [],
@@ -108,6 +122,14 @@ export const emptyDatabase = (): Database => ({
 });
 
 export function toPublicUser(user: User): PublicUser {
-  const { passwordHash: _passwordHash, ...publicUser } = user;
-  return publicUser;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    walletAddress: user.walletAddress,
+    phone: user.phone,
+    emailVerified: Boolean(user.emailVerifiedAt),
+    createdAt: user.createdAt,
+  };
 }
