@@ -15,10 +15,14 @@ const verificationCodePepper = process.env.VERIFICATION_CODE_PEPPER?.trim();
 if (process.env.NODE_ENV === 'production' && (!verificationCodePepper || verificationCodePepper.length < 32)) {
   throw new Error('VERIFICATION_CODE_PEPPER must contain at least 32 characters in production');
 }
-const platform = new PlatformService(store, wallet, process.env.BEAM_ESCROW_ADDRESS ?? '', email, verificationCodePepper);
+const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION
+  ? process.env.REQUIRE_EMAIL_VERIFICATION === 'true'
+  : process.env.NODE_ENV === 'production';
+const platform = new PlatformService(store, wallet, process.env.BEAM_ESCROW_ADDRESS ?? '', email, verificationCodePepper, requireEmailVerification);
 const app = createApp(platform);
 
 app.listen(PORT, () => {
   console.log(`WorkingBeam API listening on http://localhost:${PORT}`);
   console.log(`Beam wallet mode: ${wallet.mode}`);
+  console.log(`Email verification: ${requireEmailVerification ? 'required' : 'paused'}`);
 });

@@ -34,6 +34,10 @@ export interface PaymentView extends PaymentRequest {
   transactions: BeamTransaction[];
 }
 
+export type RegistrationResult =
+  | { user: PublicUser; token: string }
+  | { requiresVerification: true; email: string; expiresAt: string };
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -93,6 +97,7 @@ export class PlatformService {
     private readonly escrowAddress: string,
     private readonly emailService: EmailService,
     private readonly verificationCodePepper = 'workingbeam-development-verification-pepper',
+    private readonly requireEmailVerification = true,
   ) {}
 
   private createSession(userId: string): { session: Session; token: string } {
@@ -121,7 +126,7 @@ export class PlatformService {
 
   async register(input: {
     name?: string; email?: string; password?: string; role?: string; walletAddress?: string; phone?: string;
-  }): Promise<{ requiresVerification: true; email: string; expiresAt: string }> {
+  }): Promise<RegistrationResult> {
     validateRegistration(input);
     const email = normalizeEmail(input.email);
     if (this.store.read().users.some((user) => user.email === email)) {
@@ -144,6 +149,16 @@ export class PlatformService {
       phone: input.phone?.trim() || undefined,
       createdAt: now(),
     };
+    if (!this.requireEmailVerification) {
+      const { session, token } = this.createSession(user.id);
+      this.store.mutate((database) => {
+        if (database.users.some((item) => item.email === email)) throw new PlatformError('An account with this email already exists', 409);
+        database.users.push(user);
+        database.sessions.push(session);
+        database.auditEvents.push(this.audit(user.id, 'auth.register', 'user', user.id, { role: user.role, emailVerification: 'paused', walletType: addressValidation.type }));
+      });
+      return { user: toPublicUser(user), token };
+    }
     const code = createVerificationCode();
     const timestamp = now();
     const verification = {
@@ -235,7 +250,7 @@ export class PlatformService {
     if (!user || !password || !(await verifyPassword(password, user.passwordHash))) {
       throw new PlatformError('Invalid email or password', 401);
     }
-    if (!user.emailVerifiedAt) throw new PlatformError('Verify your email before signing in', 403, 'EMAIL_UNVERIFIED');
+    if (this.requireEmailVerification && !user.emailVerifiedAt) throw new PlatformError('Verify your email before signing in', 403, 'EMAIL_UNVERIFIED');
     const { session, token } = this.createSession(user.id);
     this.store.mutate((database) => {
       database.sessions = database.sessions.filter((item) => new Date(item.expiresAt).getTime() > Date.now());
@@ -254,7 +269,7 @@ export class PlatformService {
     }
     const user = database.users.find((item) => item.id === session.userId);
     if (!user) throw new PlatformError('Account no longer exists', 401);
-    if (!user.emailVerifiedAt) throw new PlatformError('Email verification is required', 401, 'EMAIL_UNVERIFIED');
+    if (this.requireEmailVerification && !user.emailVerifiedAt) throw new PlatformError('Email verification is required', 401, 'EMAIL_UNVERIFIED');
     return toPublicUser(user);
   }
 
