@@ -2,7 +2,6 @@ import express, { NextFunction, Request, RequestHandler, Response } from 'expres
 import cors from 'cors';
 import { PublicUser } from './domain/types.js';
 import { PlatformError, PlatformService } from './services/platformService.js';
-import { HumanVerifier } from './services/humanVerifier.js';
 
 type AuthenticatedRequest = Request & { user?: PublicUser; token?: string };
 
@@ -33,7 +32,7 @@ function rateLimiter(windowMs = 60_000, maximum = 120): RequestHandler {
   };
 }
 
-export function createApp(platform: PlatformService, humanVerifier: HumanVerifier) {
+export function createApp(platform: PlatformService) {
   const app = express();
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY === 'true');
@@ -42,14 +41,6 @@ export function createApp(platform: PlatformService, humanVerifier: HumanVerifie
   app.use(rateLimiter());
   const authLimiter = rateLimiter(15 * 60_000, 20);
   const verificationLimiter = rateLimiter(15 * 60_000, 12);
-
-  const verifyHuman = async (req: Request, action: string) => {
-    try {
-      await humanVerifier.verify(req.body?.captchaToken, req.ip, action);
-    } catch (error) {
-      throw new PlatformError(error instanceof Error ? error.message : 'Security challenge failed', 400, 'CAPTCHA_FAILED');
-    }
-  };
 
   const authenticate: RequestHandler = (req, _res, next) => {
     try {
@@ -65,11 +56,10 @@ export function createApp(platform: PlatformService, humanVerifier: HumanVerifie
 
   app.get('/api/health', asyncRoute(async (_req, res) => {
     const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email, captcha: { mode: humanVerifier.mode } });
+    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
   }));
 
   app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
-    await verifyHuman(req, 'register');
     res.status(201).json(await platform.register(req.body ?? {}));
   }));
 
@@ -78,12 +68,10 @@ export function createApp(platform: PlatformService, humanVerifier: HumanVerifie
   }));
 
   app.post('/api/auth/resend-verification', verificationLimiter, asyncRoute(async (req, res) => {
-    await verifyHuman(req, 'resend');
     res.json(await platform.resendEmailVerification(req.body?.email));
   }));
 
   app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
-    await verifyHuman(req, 'login');
     res.json(await platform.login(req.body?.email, req.body?.password));
   }));
 
