@@ -36,6 +36,7 @@ button { cursor:pointer; }
 .secondary:hover { background:var(--surface-raised); border-color:#afc8bc; }
 .full { width:100%; padding:13px; }
 .error-banner { color:#8e3137; background:#fff0f1; border:1px solid #efc7ca; border-radius:8px; padding:10px 12px; font-size:13px; }
+.success-banner { color:#0c6747; background:#e8f7ef; border:1px solid #bfe5d1; border-radius:8px; padding:10px 12px; font-size:13px; }
 
 /* Authentication */
 .auth-shell { min-height:100vh; display:grid; grid-template-columns:1.08fr .92fr; }
@@ -64,6 +65,10 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .role-picker small { color:var(--muted); font-size:11px; }
 .auth-switch { color:var(--muted); text-align:center; font-size:13px; margin-top:20px; }
 .auth-switch button { border:0; background:none; color:var(--green); font-weight:700; }
+.turnstile-widget { min-height:65px; display:grid; place-items:center; overflow:hidden; }
+.verification-code { text-align:center; font:700 25px 'Manrope'; letter-spacing:8px; }
+.resend-panel { display:grid; gap:10px; margin-top:8px; padding-top:17px; border-top:1px solid var(--line); }
+.resend-panel>span { color:var(--muted); text-align:center; font-size:12px; }
 
 /* Dashboard */
 .dashboard-shell { min-height:100vh; }
