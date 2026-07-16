@@ -454,7 +454,7 @@ export class PlatformService {
   listNotifications(actor: PublicUser): Notification[] {
     return this.store.read().notifications
       .filter((item) => item.userId === actor.id)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      .reverse();
   }
 
   markNotificationRead(actor: PublicUser, id: string): Notification {
