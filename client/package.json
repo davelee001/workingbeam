@@ -1,7 +1,7 @@
 {
   "name": "working-beam-client",
   "version": "1.0.0",
-  "description": "Frontend UI for beam analysis",
+  "description": "Freelancer and client escrow interface for WorkingBeam",
   "private": true,
   "proxy": "http://localhost:5000",
   "dependencies": {

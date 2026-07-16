@@ -1,7 +1,7 @@
 {
   "name": "working-beam-server",
   "version": "1.0.0",
-  "description": "Backend server for beam analysis",
+  "description": "Authentication, escrow, Beam wallet, and notification API for WorkingBeam",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

@@ -1,7 +1,7 @@
 {
   "name": "working-beam",
   "version": "1.0.0",
-  "description": "Structural beam analysis and design tool",
+  "description": "Freelance escrow payments on the Beam blockchain",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
