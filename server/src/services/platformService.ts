@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import {
   AuditEvent,
@@ -46,14 +46,14 @@ function tokenHash(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function verificationCodeHash(code: string, salt = randomBytes(16).toString('hex')): string {
-  return `${salt}:${createHash('sha256').update(`${salt}:${code}`).digest('hex')}`;
+function verificationCodeHash(code: string, pepper: string, salt = randomBytes(16).toString('hex')): string {
+  return `${salt}:${createHmac('sha256', pepper).update(`${salt}:${code}`).digest('hex')}`;
 }
 
-function verificationCodeMatches(code: string, stored: string): boolean {
+function verificationCodeMatches(code: string, stored: string, pepper: string): boolean {
   const [salt, expectedHex] = stored.split(':');
   if (!salt || !expectedHex) return false;
-  const actual = Buffer.from(verificationCodeHash(code, salt).split(':')[1], 'hex');
+  const actual = Buffer.from(verificationCodeHash(code, pepper, salt).split(':')[1], 'hex');
   const expected = Buffer.from(expectedHex, 'hex');
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
@@ -92,6 +92,7 @@ export class PlatformService {
     private readonly wallet: BeamWallet,
     private readonly escrowAddress: string,
     private readonly emailService: EmailService,
+    private readonly verificationCodePepper = 'workingbeam-development-verification-pepper',
   ) {}
 
   private createSession(userId: string): { session: Session; token: string } {
@@ -146,7 +147,7 @@ export class PlatformService {
     const code = createVerificationCode();
     const timestamp = now();
     const verification = {
-      id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code), attempts: 0,
+      id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code, this.verificationCodePepper), attempts: 0,
       createdAt: timestamp, lastSentAt: timestamp,
       expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60_000).toISOString(),
     };
@@ -181,7 +182,7 @@ export class PlatformService {
     if (verification.attempts >= VERIFICATION_MAX_ATTEMPTS) {
       throw new PlatformError('Too many incorrect codes. Request a new verification code', 429, 'VERIFICATION_ATTEMPTS_EXCEEDED');
     }
-    const matches = /^\d{6}$/.test(code) && verificationCodeMatches(code, verification.codeHash);
+    const matches = /^\d{6}$/.test(code) && verificationCodeMatches(code, verification.codeHash, this.verificationCodePepper);
     if (!matches) {
       this.store.mutate((database) => {
         const stored = database.emailVerifications.find((item) => item.id === verification.id);
@@ -219,7 +220,7 @@ export class PlatformService {
     this.store.mutate((database) => {
       database.emailVerifications = database.emailVerifications.filter((item) => item.userId !== user.id);
       database.emailVerifications.push({
-        id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code), attempts: 0,
+        id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code, this.verificationCodePepper), attempts: 0,
         createdAt: timestamp, lastSentAt: timestamp,
         expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60_000).toISOString(),
       });
