@@ -2,6 +2,7 @@ import express, { NextFunction, Request, RequestHandler, Response } from 'expres
 import cors from 'cors';
 import { PublicUser } from './domain/types.js';
 import { PlatformError, PlatformService } from './services/platformService.js';
+import { HumanVerifier } from './services/humanVerifier.js';
 
 type AuthenticatedRequest = Request & { user?: PublicUser; token?: string };
 
@@ -32,12 +33,23 @@ function rateLimiter(windowMs = 60_000, maximum = 120): RequestHandler {
   };
 }
 
-export function createApp(platform: PlatformService) {
+export function createApp(platform: PlatformService, humanVerifier: HumanVerifier) {
   const app = express();
   app.disable('x-powered-by');
+  if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY === 'true');
   app.use(cors({ origin: process.env.CLIENT_ORIGIN?.split(',') ?? true }));
   app.use(express.json({ limit: '64kb' }));
   app.use(rateLimiter());
+  const authLimiter = rateLimiter(15 * 60_000, 20);
+  const verificationLimiter = rateLimiter(15 * 60_000, 12);
+
+  const verifyHuman = async (req: Request, action: string) => {
+    try {
+      await humanVerifier.verify(req.body?.captchaToken, req.ip, action);
+    } catch (error) {
+      throw new PlatformError(error instanceof Error ? error.message : 'Security challenge failed', 400, 'CAPTCHA_FAILED');
+    }
+  };
 
   const authenticate: RequestHandler = (req, _res, next) => {
     try {
@@ -52,15 +64,26 @@ export function createApp(platform: PlatformService) {
   };
 
   app.get('/api/health', asyncRoute(async (_req, res) => {
-    const wallet = await platform.walletHealth();
-    res.json({ status: 'ok', service: 'WorkingBeam API', wallet });
+    const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email, captcha: { mode: humanVerifier.mode } });
   }));
 
-  app.post('/api/auth/register', asyncRoute(async (req, res) => {
+  app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
+    await verifyHuman(req, 'register');
     res.status(201).json(await platform.register(req.body ?? {}));
   }));
 
-  app.post('/api/auth/login', asyncRoute(async (req, res) => {
+  app.post('/api/auth/verify-email', verificationLimiter, asyncRoute(async (req, res) => {
+    res.json(await platform.verifyEmail(req.body?.email, req.body?.code));
+  }));
+
+  app.post('/api/auth/resend-verification', verificationLimiter, asyncRoute(async (req, res) => {
+    await verifyHuman(req, 'resend');
+    res.json(await platform.resendEmailVerification(req.body?.email));
+  }));
+
+  app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
+    await verifyHuman(req, 'login');
     res.json(await platform.login(req.body?.email, req.body?.password));
   }));
 
@@ -120,7 +143,7 @@ export function createApp(platform: PlatformService) {
   app.use((_req, res) => res.status(404).json({ error: 'Endpoint not found' }));
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (error instanceof PlatformError) {
-      res.status(error.statusCode).json({ error: error.message }); return;
+      res.status(error.statusCode).json({ error: error.message, code: error.code }); return;
     }
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
