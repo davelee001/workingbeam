@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import {
   AuditEvent,
@@ -14,12 +14,16 @@ import {
 } from '../domain/types.js';
 import { DataStore } from '../persistence/jsonStore.js';
 import { BeamWallet } from './beamWallet.js';
+import { EmailService } from './emailService.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_HOURS = 24;
+const VERIFICATION_MINUTES = 10;
+const VERIFICATION_MAX_ATTEMPTS = 5;
+const VERIFICATION_RESEND_SECONDS = 60;
 
 export class PlatformError extends Error {
-  constructor(message: string, readonly statusCode = 400) {
+  constructor(message: string, readonly statusCode = 400, readonly code?: string) {
     super(message);
   }
 }
@@ -40,6 +44,22 @@ function now(): string {
 
 function tokenHash(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+function verificationCodeHash(code: string, salt = randomBytes(16).toString('hex')): string {
+  return `${salt}:${createHash('sha256').update(`${salt}:${code}`).digest('hex')}`;
+}
+
+function verificationCodeMatches(code: string, stored: string): boolean {
+  const [salt, expectedHex] = stored.split(':');
+  if (!salt || !expectedHex) return false;
+  const actual = Buffer.from(verificationCodeHash(code, salt).split(':')[1], 'hex');
+  const expected = Buffer.from(expectedHex, 'hex');
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+function createVerificationCode(): string {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -71,7 +91,19 @@ export class PlatformService {
     private readonly store: DataStore,
     private readonly wallet: BeamWallet,
     private readonly escrowAddress: string,
+    private readonly emailService: EmailService,
   ) {}
+
+  private createSession(userId: string): { session: Session; token: string } {
+    const token = randomBytes(32).toString('base64url');
+    return {
+      token,
+      session: {
+        tokenHash: tokenHash(token), userId,
+        expiresAt: new Date(Date.now() + SESSION_HOURS * 3_600_000).toISOString(),
+      },
+    };
+  }
 
   private audit(actorId: string | undefined, action: string, entityType: string, entityId: string, metadata?: Record<string, unknown>): AuditEvent {
     return { id: randomUUID(), actorId, action, entityType, entityId, metadata, createdAt: now() };
@@ -88,12 +120,19 @@ export class PlatformService {
 
   async register(input: {
     name?: string; email?: string; password?: string; role?: string; walletAddress?: string; phone?: string;
-  }): Promise<{ user: PublicUser; token: string }> {
+  }): Promise<{ requiresVerification: true; email: string; expiresAt: string }> {
     validateRegistration(input);
     const email = normalizeEmail(input.email);
     if (this.store.read().users.some((user) => user.email === email)) {
       throw new PlatformError('An account with this email already exists', 409);
     }
+    let addressValidation;
+    try {
+      addressValidation = await this.wallet.validateAddress(input.walletAddress.trim());
+    } catch {
+      throw new PlatformError('Beam wallet validation is temporarily unavailable', 503, 'WALLET_VALIDATION_UNAVAILABLE');
+    }
+    if (!addressValidation.valid) throw new PlatformError('The Beam wallet address or payment token is not valid', 400, 'INVALID_BEAM_ADDRESS');
     const user: User = {
       id: randomUUID(),
       name: input.name.trim(),
@@ -104,17 +143,84 @@ export class PlatformService {
       phone: input.phone?.trim() || undefined,
       createdAt: now(),
     };
-    const token = randomBytes(32).toString('base64url');
-    const session: Session = {
-      tokenHash: tokenHash(token), userId: user.id,
-      expiresAt: new Date(Date.now() + SESSION_HOURS * 3_600_000).toISOString(),
+    const code = createVerificationCode();
+    const timestamp = now();
+    const verification = {
+      id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code), attempts: 0,
+      createdAt: timestamp, lastSentAt: timestamp,
+      expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60_000).toISOString(),
     };
     this.store.mutate((database) => {
       database.users.push(user);
-      database.sessions.push(session);
-      database.auditEvents.push(this.audit(user.id, 'auth.register', 'user', user.id, { role: user.role }));
+      database.emailVerifications.push(verification);
+      database.auditEvents.push(this.audit(user.id, 'auth.register_pending', 'user', user.id, { role: user.role, walletType: addressValidation.type }));
     });
-    return { user: toPublicUser(user), token };
+    try {
+      await this.emailService.sendVerificationCode(user, code, VERIFICATION_MINUTES);
+    } catch {
+      this.store.mutate((database) => {
+        database.users = database.users.filter((item) => item.id !== user.id);
+        database.emailVerifications = database.emailVerifications.filter((item) => item.userId !== user.id);
+      });
+      throw new PlatformError('Verification email could not be delivered. Check the address and try again', 503, 'EMAIL_DELIVERY_FAILED');
+    }
+    return { requiresVerification: true, email, expiresAt: verification.expiresAt };
+  }
+
+  async verifyEmail(emailInput: string | undefined, codeInput: string | undefined): Promise<{ user: PublicUser; token: string }> {
+    const email = normalizeEmail(emailInput ?? '');
+    const user = this.store.read().users.find((candidate) => candidate.email === email);
+    if (!user) throw new PlatformError('Verification code is invalid or expired', 400, 'INVALID_VERIFICATION_CODE');
+    if (user.emailVerifiedAt) throw new PlatformError('This email is already verified', 409, 'EMAIL_ALREADY_VERIFIED');
+    const verification = this.store.read().emailVerifications.find((item) => item.userId === user.id);
+    const code = codeInput?.trim() ?? '';
+    if (!verification || new Date(verification.expiresAt).getTime() <= Date.now()) {
+      throw new PlatformError('Verification code is invalid or expired', 400, 'INVALID_VERIFICATION_CODE');
+    }
+    if (verification.attempts >= VERIFICATION_MAX_ATTEMPTS) {
+      throw new PlatformError('Too many incorrect codes. Request a new verification code', 429, 'VERIFICATION_ATTEMPTS_EXCEEDED');
+    }
+    const matches = /^\d{6}$/.test(code) && verificationCodeMatches(code, verification.codeHash);
+    if (!matches) {
+      this.store.mutate((database) => {
+        const stored = database.emailVerifications.find((item) => item.id === verification.id);
+        if (stored) stored.attempts += 1;
+        database.auditEvents.push(this.audit(user.id, 'auth.email_verification_failed', 'user', user.id));
+      });
+      throw new PlatformError('Verification code is invalid or expired', 400, 'INVALID_VERIFICATION_CODE');
+    }
+    const { session, token } = this.createSession(user.id);
+    this.store.mutate((database) => {
+      const storedUser = database.users.find((item) => item.id === user.id) as User;
+      storedUser.emailVerifiedAt = now();
+      database.emailVerifications = database.emailVerifications.filter((item) => item.userId !== user.id);
+      database.sessions.push(session);
+      database.auditEvents.push(this.audit(user.id, 'auth.email_verified', 'user', user.id));
+    });
+    return { user: toPublicUser({ ...user, emailVerifiedAt: now() }), token };
+  }
+
+  async resendEmailVerification(emailInput: string | undefined): Promise<{ sent: true }> {
+    const email = normalizeEmail(emailInput ?? '');
+    const user = this.store.read().users.find((candidate) => candidate.email === email);
+    if (!user || user.emailVerifiedAt) return { sent: true };
+    const existing = this.store.read().emailVerifications.find((item) => item.userId === user.id);
+    if (existing && Date.now() - new Date(existing.lastSentAt).getTime() < VERIFICATION_RESEND_SECONDS * 1_000) {
+      throw new PlatformError('Wait one minute before requesting another code', 429, 'VERIFICATION_RESEND_THROTTLED');
+    }
+    const code = createVerificationCode();
+    await this.emailService.sendVerificationCode(user, code, VERIFICATION_MINUTES);
+    const timestamp = now();
+    this.store.mutate((database) => {
+      database.emailVerifications = database.emailVerifications.filter((item) => item.userId !== user.id);
+      database.emailVerifications.push({
+        id: randomUUID(), userId: user.id, codeHash: verificationCodeHash(code), attempts: 0,
+        createdAt: timestamp, lastSentAt: timestamp,
+        expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60_000).toISOString(),
+      });
+      database.auditEvents.push(this.audit(user.id, 'auth.email_verification_resent', 'user', user.id));
+    });
+    return { sent: true };
   }
 
   async login(emailInput: string | undefined, password: string | undefined): Promise<{ user: PublicUser; token: string }> {
@@ -123,11 +229,8 @@ export class PlatformService {
     if (!user || !password || !(await verifyPassword(password, user.passwordHash))) {
       throw new PlatformError('Invalid email or password', 401);
     }
-    const token = randomBytes(32).toString('base64url');
-    const session: Session = {
-      tokenHash: tokenHash(token), userId: user.id,
-      expiresAt: new Date(Date.now() + SESSION_HOURS * 3_600_000).toISOString(),
-    };
+    if (!user.emailVerifiedAt) throw new PlatformError('Verify your email before signing in', 403, 'EMAIL_UNVERIFIED');
+    const { session, token } = this.createSession(user.id);
     this.store.mutate((database) => {
       database.sessions = database.sessions.filter((item) => new Date(item.expiresAt).getTime() > Date.now());
       database.sessions.push(session);
@@ -145,6 +248,7 @@ export class PlatformService {
     }
     const user = database.users.find((item) => item.id === session.userId);
     if (!user) throw new PlatformError('Account no longer exists', 401);
+    if (!user.emailVerifiedAt) throw new PlatformError('Email verification is required', 401, 'EMAIL_UNVERIFIED');
     return toPublicUser(user);
   }
 
@@ -229,8 +333,11 @@ export class PlatformService {
     if (view.clientId !== actor.id) throw new PlatformError('Only the assigned client can fund escrow', 403);
     if (view.status !== 'approved') throw new PlatformError('The request must be approved before funding', 409);
     if (this.wallet.mode === 'live' && !this.escrowAddress) throw new PlatformError('BEAM_ESCROW_ADDRESS is not configured', 503);
+    const escrowAddress = this.escrowAddress || 'mock-escrow-wallet';
+    const escrowValidation = await this.wallet.validateAddress(escrowAddress);
+    if (!escrowValidation.valid) throw new PlatformError('The configured Beam escrow address or token is invalid', 503, 'INVALID_ESCROW_ADDRESS');
     const walletTransactionId = await this.wallet.send({
-      address: this.escrowAddress || 'mock-escrow-wallet', amountBeam: view.amountBeam,
+      address: escrowAddress, amountBeam: view.amountBeam,
       comment: `WorkingBeam escrow funding ${view.id}`,
     });
     this.store.mutate((database) => {
@@ -264,6 +371,8 @@ export class PlatformService {
     const view = this.paymentView(id, actor);
     if (view.clientId !== actor.id) throw new PlatformError('Only the assigned client can release escrow', 403);
     if (view.status !== 'work_submitted') throw new PlatformError('Work must be submitted before escrow is released', 409);
+    const recipientValidation = await this.wallet.validateAddress(view.freelancer.walletAddress);
+    if (!recipientValidation.valid) throw new PlatformError('The freelancer Beam address or token is no longer valid', 409, 'INVALID_BEAM_ADDRESS');
     const walletTransactionId = await this.wallet.send({
       address: view.freelancer.walletAddress, amountBeam: view.amountBeam,
       comment: `WorkingBeam escrow release ${view.id}`,
@@ -339,5 +448,9 @@ export class PlatformService {
 
   walletHealth() {
     return this.wallet.health();
+  }
+
+  emailHealth() {
+    return this.emailService.health();
   }
 }
