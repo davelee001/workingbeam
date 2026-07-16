@@ -65,7 +65,6 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .role-picker small { color:var(--muted); font-size:11px; }
 .auth-switch { color:var(--muted); text-align:center; font-size:13px; margin-top:20px; }
 .auth-switch button { border:0; background:none; color:var(--green); font-weight:700; }
-.turnstile-widget { min-height:65px; display:grid; place-items:center; overflow:hidden; }
 .verification-code { text-align:center; font:700 25px 'Manrope'; letter-spacing:8px; }
 .resend-panel { display:grid; gap:10px; margin-top:8px; padding-top:17px; border-top:1px solid var(--line); }
 .resend-panel>span { color:var(--muted); text-align:center; font-size:12px; }

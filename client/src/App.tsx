@@ -1,6 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
-import { TurnstileWidget } from './TurnstileWidget';
 
 type Role = 'freelancer' | 'client';
 type DashboardScreen = 'overview' | 'payments' | 'wallet';
@@ -77,8 +76,6 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [captchaToken, setCaptchaToken] = useState('');
-  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [form, setForm] = useState({
@@ -86,19 +83,17 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
   });
 
   const submit = async (event: FormEvent) => {
-    event.preventDefault(); setError(''); setMessage('');
-    if (!captchaToken) { setError('Complete the security challenge first.'); return; }
-    setLoading(true);
+    event.preventDefault(); setError(''); setMessage(''); setLoading(true);
     try {
       if (registering) {
         const result = await request<{ requiresVerification: true; email: string }>('/api/auth/register', undefined, {
-          method: 'POST', body: JSON.stringify({ ...form, captchaToken }),
+          method: 'POST', body: JSON.stringify(form),
         });
         setVerificationEmail(result.email);
         setMessage(`We sent a six-digit verification code to ${result.email}.`);
       } else {
         const result = await request<{ user: User; token: string }>('/api/auth/login', undefined, {
-          method: 'POST', body: JSON.stringify({ email: form.email, password: form.password, captchaToken }),
+          method: 'POST', body: JSON.stringify({ email: form.email, password: form.password }),
         });
         onAuthenticated(result.user, result.token);
       }
@@ -107,9 +102,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
         setVerificationEmail(form.email.trim().toLowerCase());
         setMessage('Your account is waiting for email verification. Enter the code or request a new one.');
       } else setError(caught instanceof Error ? caught.message : 'Unable to continue');
-    } finally {
-      setLoading(false); setCaptchaToken(''); setCaptchaResetKey((key) => key + 1);
-    }
+    } finally { setLoading(false); }
   };
 
   const verifyEmail = async (event: FormEvent) => {
@@ -125,15 +118,14 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
 
   const resendCode = async () => {
     setError(''); setMessage('');
-    if (!captchaToken) { setError('Complete the security challenge before requesting a new code.'); return; }
     setLoading(true);
     try {
       await request('/api/auth/resend-verification', undefined, {
-        method: 'POST', body: JSON.stringify({ email: verificationEmail, captchaToken }),
+        method: 'POST', body: JSON.stringify({ email: verificationEmail }),
       });
       setMessage('A new verification code has been sent. It expires in 10 minutes.');
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to resend code'); }
-    finally { setLoading(false); setCaptchaToken(''); setCaptchaResetKey((key) => key + 1); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -158,9 +150,9 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
               {message && <div className="success-banner">{message}</div>}
               {error && <div className="error-banner">{error}</div>}
               <button className="primary full" disabled={loading || verificationCode.length !== 6}>{loading ? 'Verifying…' : 'Verify and continue'}</button>
-              <div className="resend-panel"><span>Need another code?</span><TurnstileWidget action="resend" resetKey={captchaResetKey} onToken={setCaptchaToken} /><button type="button" className="secondary full" disabled={loading || !captchaToken} onClick={() => void resendCode()}>Send a new code</button></div>
+              <div className="resend-panel"><span>Need another code?</span><button type="button" className="secondary full" disabled={loading} onClick={() => void resendCode()}>Send a new code</button></div>
             </form>
-            <p className="auth-switch"><button onClick={() => { setVerificationEmail(''); setVerificationCode(''); setCaptchaToken(''); setError(''); setMessage(''); setCaptchaResetKey((key) => key + 1); }}>Back to sign in</button></p>
+            <p className="auth-switch"><button onClick={() => { setVerificationEmail(''); setVerificationCode(''); setError(''); setMessage(''); }}>Back to sign in</button></p>
           </> : <>
           <p className="eyebrow dark">{registering ? 'Create your workspace' : 'Welcome back'}</p>
           <h2>{registering ? 'Start with WorkingBeam' : 'Sign in to continue'}</h2>
@@ -177,11 +169,10 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
               <label>Beam wallet address or token<input required minLength={10} value={form.walletAddress} onChange={(e) => setForm({ ...form, walletAddress: e.target.value })} placeholder="Paste a real Beam address or payment token" /><small>Validated securely by the connected Beam Wallet API.</small></label>
               <label>Phone <small>(optional)</small><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+211 ..." /></label>
             </>}
-            <TurnstileWidget action={registering ? 'register' : 'login'} resetKey={captchaResetKey} onToken={setCaptchaToken} />
             {error && <div className="error-banner">{error}</div>}
-            <button className="primary full" disabled={loading || !captchaToken}>{loading ? 'Please wait…' : registering ? 'Create account securely' : 'Sign in securely'}</button>
+            <button className="primary full" disabled={loading}>{loading ? 'Please wait…' : registering ? 'Create account' : 'Sign in'}</button>
           </form>
-          <p className="auth-switch">{registering ? 'Already have an account?' : 'New to WorkingBeam?'} <button onClick={() => { setRegistering(!registering); setCaptchaToken(''); setCaptchaResetKey((key) => key + 1); setError(''); }}>{registering ? 'Sign in' : 'Create one'}</button></p>
+          <p className="auth-switch">{registering ? 'Already have an account?' : 'New to WorkingBeam?'} <button onClick={() => { setRegistering(!registering); setError(''); }}>{registering ? 'Sign in' : 'Create one'}</button></p>
           </>}
         </div>
       </section>
