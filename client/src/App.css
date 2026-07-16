@@ -1,0 +1,36 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.App-header {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  color: white;
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5em;
+}
+
+.App-main {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .App-main {
+    flex-direction: column;
+  }
+
+  .App-header h1 {
+    font-size: 1.8em;
+  }
+}
