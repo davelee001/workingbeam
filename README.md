@@ -225,3 +225,10 @@ MIT License
 
 **Status**: Early Development (Phase 1)  
 **Last Updated**: 2026-07-15
+
+## Repository Status (Automated)
+
+- **Commit count (main)**: 21 (includes scaffold & initial files)
+- **Last push**: 2026-07-16
+
+If you need a different commit style (squashed commits, a single initial commit, or a release tag), tell me and I will prepare it and push accordingly.
