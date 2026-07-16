@@ -151,6 +151,7 @@ export class PlatformService {
       expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60_000).toISOString(),
     };
     this.store.mutate((database) => {
+      if (database.users.some((item) => item.email === email)) throw new PlatformError('An account with this email already exists', 409);
       database.users.push(user);
       database.emailVerifications.push(verification);
       database.auditEvents.push(this.audit(user.id, 'auth.register_pending', 'user', user.id, { role: user.role, walletType: addressValidation.type }));
@@ -209,7 +210,11 @@ export class PlatformService {
       throw new PlatformError('Wait one minute before requesting another code', 429, 'VERIFICATION_RESEND_THROTTLED');
     }
     const code = createVerificationCode();
-    await this.emailService.sendVerificationCode(user, code, VERIFICATION_MINUTES);
+    try {
+      await this.emailService.sendVerificationCode(user, code, VERIFICATION_MINUTES);
+    } catch {
+      throw new PlatformError('Verification email could not be delivered. Try again later', 503, 'EMAIL_DELIVERY_FAILED');
+    }
     const timestamp = now();
     this.store.mutate((database) => {
       database.emailVerifications = database.emailVerifications.filter((item) => item.userId !== user.id);
