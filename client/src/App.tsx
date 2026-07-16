@@ -294,7 +294,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
             </div>
           </section>
           <section className="section-heading wallet-section-heading"><div><h2>Transaction history</h2><p>Funding and release activity reported by the Beam wallet connection.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
-          <section className="transaction-table">
+          <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
             {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No wallet activity yet</h3><p>Transactions will appear after a client funds the first approved request.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : <>{transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : 'Freelancer release'}</span></div><code>{transaction.walletTransactionId.slice(0, 20)}…</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}</>}
           </section>
           <section className="wallet-security"><div>✓</div><div><h3>Wallet security</h3><p>WorkingBeam never asks for your Beam seed phrase. Live wallet credentials remain server-side and should be protected with TLS, ACL, and IP allowlisting.</p></div></section>

@@ -190,6 +190,8 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .wallet-summary>div:first-child em { color:#9fc3b3; }
 .wallet-section-heading { margin-top:0; }
 .transaction-table { overflow:hidden; background:white; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 28px rgba(23,52,41,.045); }
+.transaction-table.is-empty { position:relative; isolation:isolate; overflow:hidden; color:#f2faf6; background:linear-gradient(125deg,#092f25 0%,#0d4032 55%,#14503e 100%); border-color:#1b5a47; box-shadow:0 16px 38px rgba(10,51,40,.14); }
+.transaction-table.is-empty::before { content:''; position:absolute; z-index:-1; width:310px; height:310px; right:-130px; bottom:-210px; border:1px solid rgba(140,221,185,.16); border-radius:50%; box-shadow:0 0 0 50px rgba(140,221,185,.04),0 0 0 100px rgba(140,221,185,.022); }
 .transaction-row { display:grid; grid-template-columns:38px minmax(150px,1.3fr) minmax(130px,1fr) auto auto; align-items:center; gap:13px; padding:14px 18px; border-bottom:1px solid #e8eeeb; font-size:11px; }
 .transaction-row:last-child { border-bottom:0; }
 .transaction-row>div:nth-child(2) { display:grid; }
@@ -200,8 +202,10 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .transaction-row b.failed { color:#a23e44; background:#ffebed; }
 .tx-icon { width:34px; height:34px; display:grid; place-items:center; color:#126e4b; background:#e4f5ec; border-radius:50%; font-size:16px; font-weight:700; }
 .tx-icon.release { color:#376f99; background:#e8f2fa; }
-.wallet-empty { padding:55px 20px; text-align:center; }
-.wallet-empty>span { color:var(--green); font-size:33px; }.wallet-empty h3 { margin:8px 0 4px; }.wallet-empty p { margin:0 auto 17px; color:var(--muted); }
+.wallet-empty { padding:60px 20px; text-align:center; }
+.wallet-empty>span { color:#64d7a5; font-size:33px; }.wallet-empty h3 { color:#f4faf7; margin:8px 0 4px; }.wallet-empty p { margin:0 auto 17px; color:#b8d1c6; }
+.wallet-empty>.secondary { color:#0a392b; background:#dff5e9; border-color:#dff5e9; box-shadow:0 7px 22px rgba(0,0,0,.14); }
+.wallet-empty>.secondary:hover { color:#082d22; background:#f2fbf6; border-color:#f2fbf6; }
 .wallet-security { display:flex; align-items:start; gap:14px; margin-top:15px; padding:17px 19px; color:#2f5143; background:#edf7f2; border:1px solid #d3eade; border-radius:11px; }
 .wallet-security>div:first-child { width:27px; height:27px; display:grid; place-items:center; flex:none; color:white; background:var(--green); border-radius:50%; font-weight:700; }
 .wallet-security h3 { margin:1px 0 3px; font-size:13px; }.wallet-security p { margin:0; color:#60766c; font-size:11px; line-height:1.5; }
