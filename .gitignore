@@ -3,6 +3,8 @@ dist/
 build/
 .env.local
 .env.*.local
+.env
+!.env.example
 .DS_Store
 *.log
 *.swp
