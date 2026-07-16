@@ -59,7 +59,46 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Durable JSON storage with atomic file replacement
 - Audit history for authentication, payment, escrow, and transaction activity
 - Request-size limits, API rate limiting, and hidden Express signature
-- Responsive freelancer/client dashboard
+- Responsive freelancer/client workspace with dedicated Overview, Payments, and Wallet screens
+
+## Product Screens
+
+### Overview
+
+The Overview screen is the operating summary for either role:
+
+- Total requested, protected escrow, and confirmed payment metrics
+- Beam wallet connection mode
+- Recent payment activity and current lifecycle state
+- Direct access to payment creation for freelancers
+- Approval, funding, delivery, release, dispute, and confirmation actions where applicable
+
+### Payments
+
+The Payments screen provides the full escrow workspace:
+
+- Counts for all, active, escrowed, completed, and disputed requests
+- Filters for `all`, `active`, `escrow`, `completed`, and `disputed`
+- Full request history instead of the Overview subset
+- Counterparty, amount, delivery note, transaction ID, and timeline details
+- Role-aware actions with server-side authorization and state validation
+
+### Wallet
+
+The Wallet screen presents the Beam-facing view:
+
+- Mock or live Wallet API connection status
+- Current user's Beam receiving address with copy action
+- Protected escrow and confirmed transaction totals
+- Funding and release transaction history
+- On-chain transaction state and wallet transaction IDs
+- Security guidance explaining that WorkingBeam never requests a wallet seed phrase
+
+### Notifications
+
+The notification panel is available from every authenticated screen. It displays payment, delivery, dispute, release, and confirmation events addressed to the signed-in account.
+
+The interface uses a balanced forest-green system: dark green anchors the welcome, wallet, and empty-state areas while navigation, data cards, forms, and transaction tables remain light and low-glare.
 
 ## Payment Lifecycle
 
@@ -176,6 +215,19 @@ npm run dev
 
 The client must exist before a freelancer can address a payment request to the client's email. For a local end-to-end test, register a client account, sign out, register a freelancer account, and create a request using the client's email.
 
+### Local Workflow Walkthrough
+
+1. Register a **client** with a Beam wallet address or test token.
+2. Sign out and register a **freelancer** using a different email.
+3. From Overview or Payments, create a request using the client's email.
+4. Sign in as the client and approve the request.
+5. Fund escrow. In mock mode, a mock Beam transaction ID is generated.
+6. Select **Check confirmation** to move the request to `funded`.
+7. Sign in as the freelancer and submit a delivery note or work link.
+8. Sign in as the client and release payment.
+9. Refresh the release transaction to confirm it and complete the request.
+10. Review the transaction on the Wallet screen and notifications from the top navigation.
+
 ### Test and Build
 
 ```bash
@@ -184,6 +236,14 @@ npm run build
 ```
 
 The test suite covers authentication, password storage, duplicate accounts, request creation, authorization, the complete escrow lifecycle, transaction confirmation, disputes, duplicate-action protection, notification creation, and audit events.
+
+### Current Verification
+
+- 8 platform tests passing
+- Server TypeScript build passing
+- React production build passing
+- Responsive navigation available on desktop and mobile
+- Mock wallet health available from `/api/health`
 
 ## Environment Variables
 
@@ -250,6 +310,6 @@ The repository is a functional MVP, not a production custody deployment. Before 
 
 MIT
 
-**Status:** Working local MVP with mock or HTTP Beam Wallet API modes.
+**Status:** Working local MVP with role-based screens, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
 
 **Last updated:** 2026-07-16
