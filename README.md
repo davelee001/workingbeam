@@ -44,7 +44,7 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 ## Implemented
 
 - Freelancer and client registration
-- Six-digit email activation codes delivered through SMTP, stored only as HMAC hashes protected by a server-side pepper, and guarded by expiry, resend throttling, and attempt limits
+- Optional six-digit email activation codes delivered through SMTP, stored only as HMAC hashes protected by a server-side pepper, and guarded by expiry, resend throttling, and attempt limits
 - Password hashing with a unique salt and Node.js `scrypt`
 - Random bearer sessions stored as SHA-256 hashes with expiration
 - Role and resource-level authorization
@@ -204,9 +204,9 @@ Bash:
 cp server/.env.example server/.env
 ```
 
-The example uses console email delivery and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
+The example uses console email delivery, paused email verification, and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
 
-For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if required production security configuration is missing.
+For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Email verification defaults to enabled in production unless explicitly overridden. Startup fails if required production security configuration is missing.
 
 ### Run
 
@@ -223,16 +223,15 @@ The client must exist before a freelancer can address a payment request to the c
 ### Local Workflow Walkthrough
 
 1. Register a **client** with a Beam wallet address or development token.
-2. Enter the six-digit email code. In development without SMTP, read it from the API console.
-3. Sign out, register a **freelancer** using a different email, and verify that email.
-4. From Overview or Payments, create a request using the client's email.
-5. Sign in as the client and approve the request.
-6. Fund escrow. In mock mode, a mock Beam transaction ID is generated.
-7. Select **Check confirmation** to move the request to `funded`.
-8. Sign in as the freelancer and submit a delivery note or work link.
-9. Sign in as the client and release payment.
-10. Refresh the release transaction to confirm it and complete the request.
-11. Review the transaction on the Wallet screen and notifications from the top navigation.
+2. Sign out and register a **freelancer** using a different email. When verification is enabled, enter the six-digit code from email or the development API console.
+3. From Overview or Payments, create a request using the client's email.
+4. Sign in as the client and approve the request.
+5. Fund escrow. In mock mode, a mock Beam transaction ID is generated.
+6. Select **Check confirmation** to move the request to `funded`.
+7. Sign in as the freelancer and submit a delivery note or work link.
+8. Sign in as the client and release payment.
+9. Refresh the release transaction to confirm it and complete the request.
+10. Review the transaction on the Wallet screen and notifications from the top navigation.
 
 ### Test and Build
 
@@ -260,6 +259,7 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | `DATA_FILE` | `./data/workingbeam.json` | Persistent MVP data file |
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
 | `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
+| `REQUIRE_EMAIL_VERIFICATION` | `false` in example; production defaults to `true` | Enables email-code activation without removing the verification implementation |
 | `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
 | `EMAIL_FROM` | example sender | Verified sender used for activation messages |
 | `BEAM_WALLET_API_URL` | empty | Live endpoint, for example `https://wallet.internal/api/wallet` |
