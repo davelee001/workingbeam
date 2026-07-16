@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { analyzeBeam } from './utils/beamCalculations.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,13 +17,14 @@ app.get('/api/health', (req, res) => {
 app.post('/api/analyze', (req, res) => {
   try {
     const { geometry, materials, loads, supports } = req.body;
-    // TODO: Implement beam analysis logic
-    res.json({
-      message: 'Analysis endpoint',
-      received: { geometry, materials, loads, supports }
-    });
+    if (!geometry || !materials || !Array.isArray(loads) || !Array.isArray(supports)) {
+      res.status(400).json({ error: 'geometry, materials, loads, and supports are required' });
+      return;
+    }
+    res.json(analyzeBeam(geometry, materials, loads, supports));
   } catch (error) {
-    res.status(400).json({ error: 'Analysis failed' });
+    const message = error instanceof Error ? error.message : 'Analysis failed';
+    res.status(400).json({ error: message });
   }
 });
 
