@@ -39,7 +39,7 @@ export class TurnstileVerifier implements HumanVerifier {
     const result = await response.json() as TurnstileResponse;
     if (!result.success) throw new Error('Security challenge failed or expired. Please try again');
     if (this.expectedHostname && result.hostname !== this.expectedHostname) throw new Error('Security challenge hostname did not match');
-    if (result.action && result.action !== expectedAction) throw new Error('Security challenge action did not match');
+    if (this.mode === 'turnstile' && result.action !== expectedAction) throw new Error('Security challenge action did not match');
   }
 }
 
