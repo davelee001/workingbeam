@@ -41,18 +41,18 @@ const BeamInputForm: React.FC<BeamInputFormProps> = ({ onAnalyze }) => {
         <h2>Beam Input</h2>
 
         <fieldset>
-          <legend>Geometry (mm)</legend>
+          <legend>Geometry (span in m, section in mm)</legend>
           <div className="form-group">
             <label>Span (L):</label>
-            <input type="number" {...register('geometry.span')} step="0.1" />
+            <input type="number" {...register('geometry.span', { valueAsNumber: true })} step="0.1" />
           </div>
           <div className="form-group">
             <label>Width (b):</label>
-            <input type="number" {...register('geometry.width')} />
+            <input type="number" {...register('geometry.width', { valueAsNumber: true })} />
           </div>
           <div className="form-group">
             <label>Depth (d):</label>
-            <input type="number" {...register('geometry.depth')} />
+            <input type="number" {...register('geometry.depth', { valueAsNumber: true })} />
           </div>
         </fieldset>
 
@@ -69,14 +69,14 @@ const BeamInputForm: React.FC<BeamInputFormProps> = ({ onAnalyze }) => {
           {materialType === 'concrete' && (
             <div className="form-group">
               <label>fc (MPa):</label>
-              <input type="number" {...register('fc')} step="0.1" />
+              <input type="number" {...register('fc', { valueAsNumber: true })} step="0.1" />
             </div>
           )}
 
           {materialType === 'steel' && (
             <div className="form-group">
               <label>Fy (MPa):</label>
-              <input type="number" {...register('fy')} step="0.1" />
+              <input type="number" {...register('fy', { valueAsNumber: true })} step="0.1" />
             </div>
           )}
         </fieldset>
@@ -85,7 +85,7 @@ const BeamInputForm: React.FC<BeamInputFormProps> = ({ onAnalyze }) => {
           <legend>Loads (kN/m)</legend>
           <div className="form-group">
             <label>Dead Load:</label>
-            <input type="number" {...register('loads.0.value')} step="0.1" />
+            <input type="number" {...register('loads.0.value', { valueAsNumber: true })} step="0.1" />
           </div>
         </fieldset>
 
