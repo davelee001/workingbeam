@@ -44,7 +44,6 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 ## Implemented
 
 - Freelancer and client registration
-- Cloudflare Turnstile CAPTCHA on registration, sign-in, and verification-code resend
 - Six-digit email activation codes delivered through SMTP, stored only as HMAC hashes protected by a server-side pepper, and guarded by expiry, resend throttling, and attempt limits
 - Password hashing with a unique salt and Node.js `scrypt`
 - Random bearer sessions stored as SHA-256 hashes with expiration
@@ -143,7 +142,6 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **API:** Node.js, Express, TypeScript
 - **Persistence:** atomic JSON store for the MVP
 - **Authentication:** scrypt password hashes and expiring bearer sessions
-- **Human verification:** Cloudflare Turnstile with mandatory server-side Siteverify checks
 - **Email:** SMTP through Nodemailer with hashed, expiring activation codes
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
 - **Tests:** Node.js built-in test runner
@@ -198,19 +196,17 @@ PowerShell:
 
 ```powershell
 Copy-Item server/.env.example server/.env
-Copy-Item client/.env.example client/.env
 ```
 
 Bash:
 
 ```bash
 cp server/.env.example server/.env
-cp client/.env.example client/.env
 ```
 
-The examples use Cloudflare's official localhost-only test keys, console email delivery, and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
+The example uses console email delivery and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
 
-For a real deployment, set `NODE_ENV=production`, configure matching production Turnstile keys, a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if required production security configuration is missing.
+For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Startup fails if required production security configuration is missing.
 
 ### Run
 
@@ -226,7 +222,7 @@ The client must exist before a freelancer can address a payment request to the c
 
 ### Local Workflow Walkthrough
 
-1. Complete the CAPTCHA and register a **client** with a Beam wallet address or development token.
+1. Register a **client** with a Beam wallet address or development token.
 2. Enter the six-digit email code. In development without SMTP, read it from the API console.
 3. Sign out, register a **freelancer** using a different email, and verify that email.
 4. From Overview or Payments, create a request using the client's email.
@@ -245,7 +241,7 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers CAPTCHA provider validation, email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, and audit events.
+The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, and audit events.
 
 ### Current Verification
 
@@ -263,10 +259,7 @@ The test suite covers CAPTCHA provider validation, email-code hashing, expiry an
 | `CLIENT_ORIGIN` | any origin in development | Comma-separated allowed browser origins |
 | `DATA_FILE` | `./data/workingbeam.json` | Persistent MVP data file |
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
-| `TURNSTILE_SECRET_KEY` | development test key | Secret used by the API for Siteverify; a real key is mandatory in production |
-| `TURNSTILE_EXPECTED_HOSTNAME` | empty | Exact production hostname expected in a valid Turnstile response |
 | `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
-| `REACT_APP_TURNSTILE_SITE_KEY` | development test key | Public browser widget key, configured in `client/.env` at build time |
 | `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
 | `EMAIL_FROM` | example sender | Verified sender used for activation messages |
 | `BEAM_WALLET_API_URL` | empty | Live endpoint, for example `https://wallet.internal/api/wallet` |
@@ -284,10 +277,8 @@ The test suite covers CAPTCHA provider validation, email-code hashing, expiry an
 | `GET` | `/api/health` | API and wallet-adapter status |
 | `POST` | `/api/auth/register` | Create freelancer/client account |
 | `POST` | `/api/auth/verify-email` | Activate an account with the emailed six-digit code |
-| `POST` | `/api/auth/resend-verification` | Send a replacement code after CAPTCHA and cooldown |
+| `POST` | `/api/auth/resend-verification` | Send a replacement code after the resend cooldown |
 | `POST` | `/api/auth/login` | Create a session for a verified account |
-
-Registration and login bodies require a fresh `captchaToken`. Turnstile tokens are checked by the API and are never trusted based on browser rendering alone.
 
 ### Authenticated
 
