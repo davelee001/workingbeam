@@ -334,6 +334,7 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 
 | Method | Endpoint | Purpose |
 |---|---|---|
+| `GET` | `/api` | API index with available public and authenticated routes |
 | `GET` | `/api/health` | API and wallet-adapter status |
 | `POST` | `/api/contact` | Store a validated public contact inquiry |
 | `POST` | `/api/auth/register` | Create freelancer/client account |
