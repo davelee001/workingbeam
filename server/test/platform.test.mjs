@@ -184,3 +184,34 @@ test('audit log records security and payment lifecycle events', async () => {
   assert.ok(actions.includes('payment.create'));
   assert.ok(actions.includes('payment.approve'));
 });
+
+test('public contact inquiries are validated, stored, and audited', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', new MemoryEmailService());
+  const result = platform.createContactInquiry({
+    name: 'Amina Deng',
+    email: 'AMINA@example.com',
+    company: 'WorkingBeam Studio',
+    subject: 'integration',
+    message: 'I want help connecting a Beam wallet API to the payment workflow.',
+  });
+  assert.equal(result.received, true);
+  assert.equal(store.read().contactInquiries.length, 1);
+  assert.equal(store.read().contactInquiries[0].email, 'amina@example.com');
+  assert.equal(store.read().contactInquiries[0].status, 'new');
+  assert.ok(store.read().auditEvents.some((event) => event.action === 'contact.submit' && event.metadata?.subject === 'integration'));
+});
+
+test('contact honeypot submissions are accepted without storing data', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const platform = new PlatformService(store, new MockBeamWallet(), 'mock-escrow-wallet', new MemoryEmailService());
+  const result = platform.createContactInquiry({
+    name: 'Bot',
+    email: 'bot@example.com',
+    subject: 'product',
+    message: 'This message is long enough to pass normal validation.',
+    website: 'https://spam.example.com',
+  });
+  assert.equal(result.received, true);
+  assert.equal(store.read().contactInquiries.length, 0);
+});
