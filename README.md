@@ -100,7 +100,7 @@ The Wallet screen presents the Beam-facing view:
 
 The notification panel is available from every authenticated screen. It displays payment, delivery, dispute, release, and confirmation events addressed to the signed-in account.
 
-The interface balances dark forest-green product areas with a visible Beam-pink header and low-glare pink surfaces for navigation, cards, authentication, and forms.
+The interface balances dark forest-green product areas with a rich Beam-pink header and deeper dusty-pink surfaces across navigation, cards, authentication, forms, notifications, and dialogs.
 
 ## Payment Lifecycle
 
@@ -244,7 +244,7 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 
 ### Current Verification
 
-- 12 security and platform tests passing
+- 13 security and platform tests passing
 - Server TypeScript build passing
 - React production build passing
 - Responsive navigation available on desktop and mobile
@@ -324,4 +324,4 @@ MIT
 
 **Status:** Working local MVP with role-based screens, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
 
-**Last updated:** 2026-07-16
+**Last updated:** 2026-07-17
