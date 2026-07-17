@@ -336,6 +336,7 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 |---|---|---|
 | `GET` | `/api` | API index with available public and authenticated routes |
 | `GET` | `/api/health` | API and wallet-adapter status |
+| `GET` | `/health` | Health-check alias for browser and uptime monitors |
 | `POST` | `/api/contact` | Store a validated public contact inquiry |
 | `POST` | `/api/auth/register` | Create freelancer/client account |
 | `POST` | `/api/auth/verify-email` | Activate an account with the emailed six-digit code |
