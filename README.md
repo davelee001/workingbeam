@@ -295,7 +295,7 @@ npm run dev
 - Public website: <http://localhost:3000>
 - Sign in: <http://localhost:3000/auth>
 - API: <http://localhost:5000>
-- Health and wallet mode: <http://localhost:5000/api/health>
+- Health, database mode, and wallet mode: <http://localhost:5000/api/health>
 
 The client must exist before a freelancer can address a payment request to the client's email. For a local end-to-end test, register a client account, sign out, register a freelancer account, and create a request using the client's email.
 
