@@ -90,6 +90,10 @@ export function createApp(platform: PlatformService) {
     res.json({ user: req.user });
   }));
 
+  app.patch('/api/auth/me', authenticate, asyncRoute(async (req, res) => {
+    res.json({ user: await platform.updateProfile(req.user as PublicUser, req.body ?? {}) });
+  }));
+
   app.get('/api/payment-requests', authenticate, asyncRoute((req, res) => {
     res.json({ paymentRequests: platform.listPaymentRequests(req.user as PublicUser) });
   }));
