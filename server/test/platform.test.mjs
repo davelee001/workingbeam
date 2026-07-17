@@ -147,6 +147,23 @@ test('role and ownership rules prevent unauthorized state changes', async () => 
   assert.throws(() => platform.submitWork(freelancerAuth.user, payment.id, 'Too early'), /must be funded/);
 });
 
+test('users can update profile details with Beam wallet validation', async () => {
+  const { platform, store, freelancerAuth } = await fixture();
+  const updated = await platform.updateProfile(freelancerAuth.user, {
+    name: 'Amina Updated',
+    phone: '+211 900 000',
+    walletAddress: 'beam-updated-wallet-address',
+  });
+  assert.equal(updated.name, 'Amina Updated');
+  assert.equal(updated.phone, '+211 900 000');
+  assert.equal(updated.walletAddress, 'beam-updated-wallet-address');
+  assert.ok(store.read().auditEvents.some((event) => event.action === 'profile.update'));
+  await assert.rejects(platform.updateProfile(updated, {
+    name: 'Amina Updated',
+    walletAddress: 'forged-wallet',
+  }), /not valid/);
+});
+
 test('either party can dispute funded escrow with a recorded reason', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   let payment = platform.createPaymentRequest(freelancerAuth.user, {
