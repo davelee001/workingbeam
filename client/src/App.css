@@ -83,7 +83,12 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .notification-button { position:relative; border:1px solid rgba(7,91,64,.2); color:#075b40; background:rgba(255,255,255,.38); border-radius:50%; width:36px; height:36px; font-size:20px; }
 .notification-button:hover { background:rgba(255,255,255,.58); }
 .notification-button b { position:absolute; right:-2px; top:-3px; color:white; background:var(--danger); border-radius:20px; min-width:17px; line-height:17px; font-size:10px; }
+.header-link { border:0; background:none; color:#075b40; font-size:13px; font-weight:800; padding:9px 2px; position:relative; }
+.header-link:hover,.header-link.active { color:#073f2e; }
+.header-link.active::after { content:''; position:absolute; height:2px; left:2px; right:2px; bottom:2px; background:#075b40; }
 .profile { display:flex; align-items:center; gap:9px; }
+.profile-button { border:0; background:transparent; color:var(--ink); padding:0; text-align:left; border-radius:999px; }
+.profile-button:hover,.profile-button.active { background:rgba(255,255,255,.24); }
 .avatar { width:35px; height:35px; display:grid; place-items:center; flex:none; border-radius:50%; color:#11724d; background:var(--mint); border:1px solid #c4ead7; font-weight:700; text-transform:uppercase; }
 .profile>div:last-child { display:grid; font-size:12px; }
 .profile small { color:#285d4b; text-transform:capitalize; }
