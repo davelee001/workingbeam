@@ -315,12 +315,9 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
           <button className={screen === 'payments' ? 'active' : ''} onClick={() => setScreen('payments')}>Payments</button>
           {currentUser.role === 'client' && <button className={screen === 'outstanding' ? 'active' : ''} onClick={() => setScreen('outstanding')}>Outstanding</button>}
           {currentUser.role === 'client' && <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}>History</button>}
-          <button className={screen === 'wallet' ? 'active' : ''} onClick={() => setScreen('wallet')}>Wallet</button>
           <button className={screen === 'escrow' ? 'active' : ''} onClick={() => setScreen('escrow')}>Escrow</button>
-          <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}>Settings</button>
-          <button className={screen === 'profile' ? 'active' : ''} onClick={() => setScreen('profile')}>Profile</button>
         </nav>
-        <div className="top-actions"><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>◌{unread > 0 && <b>{unread}</b>}</button><div className="profile"><div className="avatar">{initialUser.name.slice(0, 1)}</div><div><strong>{initialUser.name}</strong><small>{initialUser.role}</small></div></div><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
+        <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setScreen('profile')}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
       {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
@@ -499,3 +496,4 @@ function App() {
 }
 
 export default App;
+
