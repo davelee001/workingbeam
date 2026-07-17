@@ -178,6 +178,30 @@ test('users can update name when an existing wallet value is unchanged', async (
   assert.equal(updated.walletAddress, '1234567890urur');
 });
 
+test('users can generate a wallet and retrieve a deposit address', async () => {
+  const { platform, freelancerAuth } = await fixture();
+  const generated = await platform.generateWallet(freelancerAuth.user);
+  assert.match(generated.address, /^beam-/);
+  assert.equal(generated.user.walletAddress, generated.address);
+  const deposit = platform.depositAddress(generated.user);
+  assert.equal(deposit.address, generated.address);
+  assert.equal(deposit.mode, 'mock');
+});
+
+test('users can send standalone wallet payments and refresh confirmation', async () => {
+  const { platform, freelancerAuth } = await fixture();
+  const { transaction } = await platform.sendPayment(freelancerAuth.user, {
+    address: 'beam-recipient-wallet-address',
+    amountBeam: 1.25,
+    note: 'Standalone payment',
+  });
+  assert.equal(transaction.kind, 'send');
+  assert.equal(transaction.status, 'pending');
+  assert.equal(platform.listWalletTransactions(freelancerAuth.user).length, 1);
+  const refreshed = await platform.refreshTransaction(freelancerAuth.user, transaction.id);
+  assert.equal(refreshed.transaction.status, 'confirmed');
+});
+
 test('either party can dispute funded escrow with a recorded reason', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   let payment = platform.createPaymentRequest(freelancerAuth.user, {
