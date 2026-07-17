@@ -60,6 +60,32 @@ export function createApp(platform: PlatformService) {
     res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
   }));
 
+  app.get('/api', (_req, res) => {
+    res.json({
+      service: 'WorkingBeam API',
+      status: 'ok',
+      public: [
+        'GET /api',
+        'GET /api/health',
+        'POST /api/contact',
+        'POST /api/auth/register',
+        'POST /api/auth/login',
+      ],
+      authenticated: [
+        'GET /api/auth/me',
+        'PATCH /api/auth/me',
+        'POST /api/auth/logout',
+        'GET /api/payment-requests',
+        'POST /api/payment-requests',
+        'POST /api/wallet/generate',
+        'GET /api/wallet/deposit-address',
+        'GET /api/wallet/transactions',
+        'POST /api/wallet/send',
+        'GET /api/notifications',
+      ],
+    });
+  });
+
   app.post('/api/contact', contactLimiter, asyncRoute((req, res) => {
     platform.createContactInquiry(req.body ?? {});
     res.status(201).json({ received: true });
