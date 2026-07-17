@@ -164,6 +164,20 @@ test('users can update profile details with Beam wallet validation', async () =>
   }), /not valid/);
 });
 
+test('users can update name when an existing wallet value is unchanged', async () => {
+  const { platform, store, freelancerAuth } = await fixture();
+  store.mutate((database) => {
+    const user = database.users.find((item) => item.id === freelancerAuth.user.id);
+    user.walletAddress = '1234567890urur';
+  });
+  const updated = await platform.updateProfile({ ...freelancerAuth.user, walletAddress: '1234567890urur' }, {
+    name: 'Amina Saved',
+    walletAddress: '1234567890urur',
+  });
+  assert.equal(updated.name, 'Amina Saved');
+  assert.equal(updated.walletAddress, '1234567890urur');
+});
+
 test('either party can dispute funded escrow with a recorded reason', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   let payment = platform.createPaymentRequest(freelancerAuth.user, {
