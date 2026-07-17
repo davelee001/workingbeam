@@ -41,6 +41,7 @@ export function createApp(platform: PlatformService) {
   app.use(rateLimiter());
   const authLimiter = rateLimiter(15 * 60_000, 20);
   const verificationLimiter = rateLimiter(15 * 60_000, 12);
+  const contactLimiter = rateLimiter(60 * 60_000, 8);
 
   const authenticate: RequestHandler = (req, _res, next) => {
     try {
@@ -57,6 +58,11 @@ export function createApp(platform: PlatformService) {
   app.get('/api/health', asyncRoute(async (_req, res) => {
     const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
     res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
+  }));
+
+  app.post('/api/contact', contactLimiter, asyncRoute((req, res) => {
+    platform.createContactInquiry(req.body ?? {});
+    res.status(201).json({ received: true });
   }));
 
   app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
