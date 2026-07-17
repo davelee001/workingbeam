@@ -197,7 +197,7 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 
 - **Web:** React 18, TypeScript, Create React App
 - **API:** Node.js, Express, TypeScript
-- **Persistence:** atomic JSON store for the MVP
+- **Persistence:** atomic JSON store for local development or Supabase Postgres JSONB state for hosted deployment
 - **Authentication:** scrypt password hashes and expiring bearer sessions
 - **Email:** SMTP through Nodemailer with hashed, expiring activation codes
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
@@ -227,6 +227,7 @@ working-beam/
 |   |   |-- app.ts
 |   |   `-- index.ts
 |   |-- test/platform.test.mjs
+|   |-- supabase.schema.sql
 |   |-- .env.example
 |   |-- package.json
 |   `-- tsconfig.json
@@ -263,7 +264,25 @@ Bash:
 cp server/.env.example server/.env
 ```
 
-The example uses console email delivery, paused email verification, and a mock Beam wallet. Data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
+The example uses console email delivery, paused email verification, and a mock Beam wallet. By default, data is saved to `server/data/workingbeam.json` and excluded from Git. Local `.env` files are ignored and must never be committed.
+
+### Supabase Database
+
+To use Supabase instead of the local JSON file:
+
+1. Create a Supabase project.
+2. Open the Supabase SQL editor.
+3. Run the SQL in `server/supabase.schema.sql`.
+4. Copy the project URL and service-role key from Supabase project settings.
+5. Set these server environment variables:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_STATE_ROW_ID=default
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is a server-only secret. Do not expose it in the React client or commit it to Git.
 
 For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Email verification defaults to enabled in production unless explicitly overridden. Startup fails if required production security configuration is missing.
 
@@ -317,6 +336,9 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | `PORT` | `5000` | API listen port |
 | `CLIENT_ORIGIN` | any origin in development | Comma-separated allowed browser origins |
 | `DATA_FILE` | `./data/workingbeam.json` | Persistent MVP data file |
+| `SUPABASE_URL` | empty | Supabase project URL; enables hosted persistence when paired with a service-role key |
+| `SUPABASE_SERVICE_ROLE_KEY` | empty | Server-only Supabase service-role key used to read/write `workingbeam_state` |
+| `SUPABASE_STATE_ROW_ID` | `default` | Logical row ID for the JSONB state document |
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
 | `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` in example; production defaults to `true` | Enables email-code activation without removing the verification implementation |
