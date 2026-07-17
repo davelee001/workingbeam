@@ -283,7 +283,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
       onUserUpdated(result.user);
       setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
       setProfileEditing(false);
-      window.location.reload();
+      setScreen('profile');
+      await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to update profile'); }
     finally { setBusy(''); }
   };
@@ -437,7 +438,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
         </>}
 
         {screen === 'profile' && <>
-          <section className="screen-heading"><div><p className="eyebrow dark">{currentUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Profile</h1><p>Review your account details. Use edit profile when you want to change your information.</p></div>{!profileEditing && <button className="primary" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button>}</section>
+          <section className="screen-heading"><div><p className="eyebrow dark">{currentUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Profile</h1><p>Review your account details. Use edit profile when you want to change your information.</p></div></section>
           <section className="profile-layout">
             {profileEditing ? <form className="profile-form" onSubmit={updateProfile}>
               <label>Full name<input required minLength={2} maxLength={80} value={profileForm.name} onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })} /></label>
@@ -445,7 +446,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
               <label>Beam wallet address or token<input required minLength={10} value={profileForm.walletAddress} onChange={(event) => setProfileForm({ ...profileForm, walletAddress: event.target.value })} /></label>
               {error && <div className="error-banner">{error}</div>}
               <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
-            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div></section>}
+            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
             <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
           </section>
         </>}
