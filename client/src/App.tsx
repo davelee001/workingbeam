@@ -1,5 +1,6 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
+import { PublicPath, PublicSite } from './PublicSite';
 
 type Role = 'freelancer' | 'client';
 type DashboardScreen = 'overview' | 'payments' | 'wallet';
@@ -71,8 +72,8 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
   return payload as T;
 }
 
-function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: string) => void }) {
-  const [registering, setRegistering] = useState(false);
+function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthenticated: (user: User, token: string) => void; initialRegistering?: boolean }) {
+  const [registering, setRegistering] = useState(initialRegistering);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -368,6 +369,19 @@ function App() {
   const [token, setToken] = useState(() => localStorage.getItem('workingbeam_token') ?? '');
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(Boolean(token));
+  const [route, setRoute] = useState(() => `${window.location.pathname}${window.location.search}`);
+
+  useEffect(() => {
+    const syncRoute = () => setRoute(`${window.location.pathname}${window.location.search}`);
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, []);
+
+  const navigate = useCallback((nextRoute: string) => {
+    window.history.pushState({}, '', nextRoute);
+    setRoute(nextRoute);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     if (!token) { setChecking(false); return; }
@@ -378,13 +392,21 @@ function App() {
 
   const authenticated = (nextUser: User, nextToken: string) => {
     localStorage.setItem('workingbeam_token', nextToken); setUser(nextUser); setToken(nextToken);
+    navigate('/app');
   };
   const logout = () => {
     void request('/api/auth/logout', token, { method: 'POST' }).catch(() => undefined);
     localStorage.removeItem('workingbeam_token'); setToken(''); setUser(null);
+    navigate('/auth');
   };
   if (checking) return <div className="loading-screen"><div className="brand">Working<span>Beam</span></div><i /></div>;
-  return user && token ? <Dashboard initialUser={user} token={token} onLogout={logout} /> : <AuthScreen onAuthenticated={authenticated} />;
+  if (user && token) return <Dashboard initialUser={user} token={token} onLogout={logout} />;
+  const [publicPath, queryString = ''] = route.split('?');
+  if (publicPath === '/auth') {
+    return <AuthScreen onAuthenticated={authenticated} initialRegistering={new URLSearchParams(queryString).get('mode') === 'register'} />;
+  }
+  const knownPublicPaths: PublicPath[] = ['/', '/about', '/features', '/pricing', '/docs', '/contact'];
+  return <PublicSite path={knownPublicPaths.includes(publicPath as PublicPath) ? publicPath as PublicPath : '/'} onNavigate={navigate} />;
 }
 
 export default App;
