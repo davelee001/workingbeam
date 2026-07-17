@@ -3,7 +3,7 @@ import './App.css';
 import { PublicPath, PublicSite } from './PublicSite';
 
 type Role = 'freelancer' | 'client';
-type DashboardScreen = 'overview' | 'payments' | 'wallet';
+type DashboardScreen = 'overview' | 'payments' | 'wallet' | 'transactions' | 'escrow' | 'settings';
 type PaymentFilter = 'all' | 'active' | 'escrow' | 'completed' | 'disputed';
 type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'cancelled';
 
@@ -299,6 +299,9 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
           <button className={screen === 'overview' ? 'active' : ''} onClick={() => setScreen('overview')}>Overview</button>
           <button className={screen === 'payments' ? 'active' : ''} onClick={() => setScreen('payments')}>Payments</button>
           <button className={screen === 'wallet' ? 'active' : ''} onClick={() => setScreen('wallet')}>Wallet</button>
+          <button className={screen === 'transactions' ? 'active' : ''} onClick={() => setScreen('transactions')}>Transactions</button>
+          <button className={screen === 'escrow' ? 'active' : ''} onClick={() => setScreen('escrow')}>Escrow</button>
+          <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}>Settings</button>
         </nav>
         <div className="top-actions"><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>◌{unread > 0 && <b>{unread}</b>}</button><div className="profile"><div className="avatar">{initialUser.name.slice(0, 1)}</div><div><strong>{initialUser.name}</strong><small>{initialUser.role}</small></div></div><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
@@ -357,6 +360,40 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
             {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No wallet activity yet</h3><p>Transactions will appear after a client funds the first approved request.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : <>{transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : 'Freelancer release'}</span></div><code>{transaction.walletTransactionId.slice(0, 20)}…</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}</>}
           </section>
           <section className="wallet-security"><div>✓</div><div><h3>Wallet security</h3><p>WorkingBeam never asks for your Beam seed phrase. Live wallet credentials remain server-side and should be protected with TLS, ACL, and IP allowlisting.</p></div></section>
+        </>}
+
+        {screen === 'transactions' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">Transaction center</p><h1>Funding and release history</h1><p>Review every Beam transaction linked to your payment requests.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
+          <section className="payment-overview">
+            <div><span>Total transactions</span><strong>{transactions.length}</strong></div>
+            <div><span>Confirmed</span><strong>{confirmedTransactions.length}</strong></div>
+            <div><span>Pending</span><strong>{transactions.filter((transaction) => transaction.status === 'pending').length}</strong></div>
+            <div><span>Failed</span><strong>{transactions.filter((transaction) => transaction.status === 'failed').length}</strong></div>
+          </section>
+          <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
+            {transactions.length === 0 ? <div className="wallet-empty"><span>â—‡</span><h3>No transactions yet</h3><p>Funding and release transactions will appear after escrow activity begins.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? 'â†“' : 'â†‘'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : transaction.kind === 'release' ? 'Freelancer release' : 'Refund'}</span></div><code>{transaction.walletTransactionId}</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}
+          </section>
+        </>}
+
+        {screen === 'escrow' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">Escrow overview</p><h1>Protected payments</h1><p>Track funds that are approved, pending confirmation, held, submitted, disputed, or ready for release.</p></div>{initialUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="payment-overview">
+            <div><span>Approved</span><strong>{payments.filter((item) => item.status === 'approved').length}</strong></div>
+            <div><span>Funding pending</span><strong>{payments.filter((item) => item.status === 'funding_pending').length}</strong></div>
+            <div><span>Held in escrow</span><strong>{secured.toLocaleString()} <small>BEAM</small></strong></div>
+            <div><span>Disputed</span><strong>{payments.filter((item) => item.status === 'disputed').length}</strong></div>
+          </section>
+          {paymentGrid(payments.filter((payment) => ['approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(payment.status)))}
+        </>}
+
+        {screen === 'settings' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">{initialUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Account settings</h1><p>Review your role, verified email state, and Beam receiving address.</p></div></section>
+          <section className="settings-grid">
+            <article><small>Name</small><strong>{initialUser.name}</strong><span>{initialUser.role}</span></article>
+            <article><small>Email</small><strong>{initialUser.email}</strong><span>{initialUser.emailVerified ? 'Verified' : 'Verification paused'}</span></article>
+            <article><small>Beam address or token</small><code>{initialUser.walletAddress}</code><button className="secondary" onClick={() => void navigator.clipboard?.writeText(initialUser.walletAddress)}>Copy</button></article>
+            <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
+          </section>
         </>}
       </main>
       {showLogoutConfirm && <div className="modal-backdrop" onMouseDown={() => setShowLogoutConfirm(false)}><section className="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="signout-title" onMouseDown={(event) => event.stopPropagation()}><div className="confirm-icon">↗</div><h2 id="signout-title">Are you sure you want to sign out?</h2><p>Your current session will end. You can sign back in at any time.</p><div className="confirm-actions"><button className="secondary" onClick={() => setShowLogoutConfirm(false)}>Cancel</button><button className="signout-confirm" onClick={onLogout}>Sign out</button></div></section></div>}
