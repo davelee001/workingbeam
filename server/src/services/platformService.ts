@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import {
   AuditEvent,
   BeamTransaction,
+  ContactInquiry,
   Notification,
   NotificationChannel,
   PaymentRequest,
@@ -88,6 +89,18 @@ function validateRegistration(input: {
   if (!input.password || input.password.length < 8) throw new PlatformError('Password must contain at least 8 characters');
   if (input.role !== 'freelancer' && input.role !== 'client') throw new PlatformError('Role must be freelancer or client');
   if (!input.walletAddress?.trim() || input.walletAddress.trim().length < 10) throw new PlatformError('A valid Beam wallet address or payment token is required');
+}
+
+const contactSubjects = new Set(['product', 'integration', 'security', 'partnership']);
+
+function validateContactInquiry(input: {
+  name?: string; email?: string; company?: string; subject?: string; message?: string;
+}): asserts input is { name: string; email: string; company?: string; subject: ContactInquiry['subject']; message: string } {
+  if (!input.name?.trim() || input.name.trim().length < 2 || input.name.trim().length > 80) throw new PlatformError('Name must be between 2 and 80 characters');
+  if (!input.email || input.email.length > 160 || !/^\S+@\S+\.\S+$/.test(input.email)) throw new PlatformError('A valid email address is required');
+  if (input.company && input.company.trim().length > 120) throw new PlatformError('Company must be 120 characters or fewer');
+  if (!input.subject || !contactSubjects.has(input.subject)) throw new PlatformError('Choose a valid contact topic');
+  if (!input.message?.trim() || input.message.trim().length < 20 || input.message.trim().length > 2000) throw new PlatformError('Message must be between 20 and 2,000 characters');
 }
 
 export class PlatformService {
@@ -465,6 +478,28 @@ export class PlatformService {
       notification.read = true; result = notification;
     });
     return result as Notification;
+  }
+
+  createContactInquiry(input: {
+    name?: string; email?: string; company?: string; subject?: string; message?: string; website?: string;
+  }): { received: true; inquiry?: ContactInquiry } {
+    if (input.website?.trim()) return { received: true };
+    validateContactInquiry(input);
+    const inquiry: ContactInquiry = {
+      id: randomUUID(),
+      name: input.name.trim(),
+      email: normalizeEmail(input.email),
+      company: input.company?.trim() || undefined,
+      subject: input.subject,
+      message: input.message.trim(),
+      status: 'new',
+      createdAt: now(),
+    };
+    this.store.mutate((database) => {
+      database.contactInquiries.push(inquiry);
+      database.auditEvents.push(this.audit(undefined, 'contact.submit', 'contact_inquiry', inquiry.id, { subject: inquiry.subject }));
+    });
+    return { received: true, inquiry };
   }
 
   walletHealth() {
