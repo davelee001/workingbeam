@@ -101,6 +101,17 @@ export interface AuditEvent {
   createdAt: string;
 }
 
+export interface ContactInquiry {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  subject: 'product' | 'integration' | 'security' | 'partnership';
+  message: string;
+  status: 'new';
+  createdAt: string;
+}
+
 export interface Database {
   users: User[];
   emailVerifications: EmailVerification[];
@@ -109,6 +120,7 @@ export interface Database {
   transactions: BeamTransaction[];
   notifications: Notification[];
   auditEvents: AuditEvent[];
+  contactInquiries: ContactInquiry[];
 }
 
 export const emptyDatabase = (): Database => ({
@@ -119,6 +131,7 @@ export const emptyDatabase = (): Database => ({
   transactions: [],
   notifications: [],
   auditEvents: [],
+  contactInquiries: [],
 });
 
 export function toPublicUser(user: User): PublicUser {
