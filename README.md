@@ -106,6 +106,9 @@ The Wallet screen presents the Beam-facing view:
 
 - Mock or live Wallet API connection status
 - Current user's Beam receiving address with copy action
+- Generated Beam wallet/deposit address support through the wallet adapter
+- Deposit address panel for receiving BEAM
+- Standalone send-payment form for direct BEAM transfers outside escrow
 - Protected escrow and confirmed transaction totals
 - Funding and release transaction history
 - On-chain transaction state and wallet transaction IDs
@@ -297,11 +300,11 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, contact inquiry capture, bot honeypot handling, and audit events.
+The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, contact inquiry capture, bot honeypot handling, and audit events.
 
 ### Current Verification
 
-- 15 security and platform tests passing
+- 19 security and platform tests passing
 - Server TypeScript build passing
 - React production build passing
 - Responsive navigation available on desktop and mobile
@@ -337,6 +340,10 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | `POST` | `/api/auth/verify-email` | Activate an account with the emailed six-digit code |
 | `POST` | `/api/auth/resend-verification` | Send a replacement code after the resend cooldown |
 | `POST` | `/api/auth/login` | Create a session for a verified account |
+| `POST` | `/api/wallet/generate` | Generate and save a Beam receiving address for the signed-in account |
+| `GET` | `/api/wallet/deposit-address` | Return the current receiving/deposit address |
+| `GET` | `/api/wallet/transactions` | List escrow and standalone wallet transactions visible to the user |
+| `POST` | `/api/wallet/send` | Submit a standalone BEAM wallet transfer |
 
 ### Authenticated
 
