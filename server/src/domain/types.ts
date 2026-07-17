@@ -9,7 +9,7 @@ export type PaymentStatus =
   | 'released'
   | 'disputed'
   | 'cancelled';
-export type TransactionKind = 'funding' | 'release' | 'refund';
+export type TransactionKind = 'funding' | 'release' | 'refund' | 'send';
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';
 export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'push';
 
@@ -69,7 +69,7 @@ export interface PaymentRequest {
 
 export interface BeamTransaction {
   id: string;
-  paymentRequestId: string;
+  paymentRequestId?: string;
   walletTransactionId: string;
   kind: TransactionKind;
   amountBeam: number;

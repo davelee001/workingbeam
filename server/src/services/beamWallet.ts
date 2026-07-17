@@ -19,6 +19,7 @@ export interface WalletAddressValidation {
 
 export interface BeamWallet {
   readonly mode: 'mock' | 'live';
+  generateAddress(label: string): Promise<string>;
   validateAddress(address: string): Promise<WalletAddressValidation>;
   send(transfer: WalletTransfer): Promise<string>;
   transactionStatus(transactionId: string): Promise<WalletStatus>;
@@ -27,6 +28,11 @@ export interface BeamWallet {
 
 export class MockBeamWallet implements BeamWallet {
   readonly mode = 'mock' as const;
+
+  async generateAddress(label: string): Promise<string> {
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'wallet';
+    return `beam-${slug}-${randomUUID().replace(/-/g, '').slice(0, 16)}`;
+  }
 
   async validateAddress(address: string): Promise<WalletAddressValidation> {
     return { valid: /^(mock|beam)-[a-z0-9-]{10,}$/i.test(address), type: 'development' };
@@ -79,6 +85,17 @@ export class BeamWalletRpc implements BeamWallet {
       throw new Error(payload.error.data ?? payload.error.message ?? `Beam RPC error ${payload.error.code}`);
     }
     return payload.result;
+  }
+
+  async generateAddress(label: string): Promise<string> {
+    const result = await this.call('create_address', { comment: label });
+    if (typeof result === 'string') return result;
+    if (result && typeof result === 'object') {
+      const object = result as Record<string, unknown>;
+      const address = object.address ?? object.result;
+      if (typeof address === 'string') return address;
+    }
+    throw new Error('Beam Wallet API did not return a deposit address');
   }
 
   async validateAddress(address: string): Promise<WalletAddressValidation> {
