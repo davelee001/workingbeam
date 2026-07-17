@@ -142,11 +142,13 @@ The Settings screen gives each signed-in user an account controls area:
 - Mock or live wallet mode
 - Security summary for role, ownership, wallet, and payment-state checks
 
-The Profile screen is editable:
+The Profile screen opens in read-only review mode first. It shows the account details and keeps the edit action below those details so users are not forced into editing just by opening their profile. Selecting **Edit profile** reveals the form, and **Save changes** refreshes the dashboard data in place while keeping the user on the Profile screen.
 
 - Display name
 - Optional phone number
-- Beam receiving address or payment token, revalidated server-side before saving
+- Beam receiving address or payment token
+- Server-side wallet validation when the wallet value changes
+- Inline save errors when profile details cannot be saved
 
 ### Notifications
 
