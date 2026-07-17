@@ -111,6 +111,32 @@ The Wallet screen presents the Beam-facing view:
 - On-chain transaction state and wallet transaction IDs
 - Security guidance explaining that WorkingBeam never requests a wallet seed phrase
 
+### Transactions
+
+The Transactions screen separates blockchain activity from the wallet summary:
+
+- Total, confirmed, pending, and failed transaction counts
+- Full funding and release history across all visible payment requests
+- Complete wallet transaction IDs for reconciliation
+- Empty state that routes users back to payment activity
+
+### Escrow
+
+The Escrow screen focuses only on protected or release-relevant requests:
+
+- Approved requests ready for funding
+- Funding-pending requests waiting for confirmation
+- Held escrow value in BEAM
+- Disputed requests and release-pending work
+
+### Settings and Profile
+
+The Settings screen gives each signed-in user a profile and account review area:
+
+- Name, role, email, and verification state
+- Beam receiving address or payment token with copy action
+- Security summary for role, ownership, wallet, and payment-state checks
+
 ### Notifications
 
 The notification panel is available from every authenticated screen. It displays payment, delivery, dispute, release, and confirmation events addressed to the signed-in account.
