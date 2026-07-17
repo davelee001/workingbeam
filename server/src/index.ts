@@ -28,13 +28,14 @@ async function main() {
     ? process.env.REQUIRE_EMAIL_VERIFICATION === 'true'
     : process.env.NODE_ENV === 'production';
   const platform = new PlatformService(store, wallet, process.env.BEAM_ESCROW_ADDRESS ?? '', email, verificationCodePepper, requireEmailVerification);
-  const app = createApp(platform);
+  const persistenceMode = store instanceof SupabaseStore ? 'supabase' : 'json';
+  const app = createApp(platform, persistenceMode);
 
   app.listen(PORT, () => {
     console.log(`WorkingBeam API listening on http://localhost:${PORT}`);
     console.log(`Beam wallet mode: ${wallet.mode}`);
     console.log(`Email verification: ${requireEmailVerification ? 'required' : 'paused'}`);
-    console.log(`Persistence: ${store instanceof SupabaseStore ? 'supabase' : 'json'}`);
+    console.log(`Persistence: ${persistenceMode}`);
   });
 }
 

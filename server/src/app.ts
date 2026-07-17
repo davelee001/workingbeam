@@ -32,7 +32,7 @@ function rateLimiter(windowMs = 60_000, maximum = 120): RequestHandler {
   };
 }
 
-export function createApp(platform: PlatformService) {
+export function createApp(platform: PlatformService, persistenceMode = 'json') {
   const app = express();
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY === 'true');
@@ -57,12 +57,12 @@ export function createApp(platform: PlatformService) {
 
   app.get('/api/health', asyncRoute(async (_req, res) => {
     const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email });
   }));
 
   app.get('/health', asyncRoute(async (_req, res) => {
     const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email });
   }));
 
   app.get('/api', (_req, res) => {
