@@ -158,7 +158,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User, token: 
             <p className="auth-switch"><button onClick={() => { setVerificationEmail(''); setVerificationCode(''); setError(''); setMessage(''); }}>Back to sign in</button></p>
           </> : <>
           <p className="eyebrow dark">{registering ? 'Create your workspace' : 'Welcome back'}</p>
-          <h2>{registering ? 'Start with WorkingBeam' : 'Sign in to continue'}</h2>
+          <h2>{registering ? 'Start with WorkingBeam' : 'Sign in'}</h2>
           <p className="muted">{registering ? 'Your email and Beam receiving token are verified before the account is activated.' : 'Track escrow, delivery, and payment in one secure place.'}</p>
           <form onSubmit={submit}>
             {registering && <label>Full name<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Amina Deng" /></label>}
