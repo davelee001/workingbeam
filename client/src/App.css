@@ -237,6 +237,7 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .profile-details>div { display:grid; gap:5px; padding-bottom:13px; border-bottom:1px solid var(--line); }
 .profile-details small { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
 .profile-details strong,.profile-details code { color:var(--ink); overflow-wrap:anywhere; }
+.profile-edit-button { justify-self:start; margin-top:4px; }
 .profile-form-actions { display:flex; justify-content:flex-end; gap:10px; }
 
 /* Panels and modal */
