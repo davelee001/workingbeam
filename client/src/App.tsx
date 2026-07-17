@@ -19,10 +19,12 @@ interface User {
 
 interface Transaction {
   id: string;
-  kind: 'funding' | 'release' | 'refund';
+  kind: 'funding' | 'release' | 'refund' | 'send';
   amountBeam: number;
   status: 'pending' | 'confirmed' | 'failed';
   walletTransactionId: string;
+  paymentRequestId?: string;
+  createdAt?: string;
 }
 
 interface PaymentRequest {
@@ -218,6 +220,7 @@ function PaymentCard({ payment, user, onAction }: {
 function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUser: User; token: string; onLogout: () => void; onUserUpdated: (user: User) => void }) {
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
+  const [walletTransactions, setWalletTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -229,6 +232,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
   const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [form, setForm] = useState({ clientEmail: '', title: '', description: '', amountBeam: '', dueDate: '' });
+  const [sendForm, setSendForm] = useState({ address: '', amountBeam: '', note: '' });
   const [profileForm, setProfileForm] = useState({ name: initialUser.name, phone: initialUser.phone ?? '', walletAddress: initialUser.walletAddress });
 
   const load = useCallback(async () => {
@@ -239,6 +243,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
         request<{ wallet: { mode: string } }>('/api/health'),
       ]);
       setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode);
+      const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
+      setWalletTransactions(walletData.transactions);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
   }, [token]);
 
@@ -289,11 +295,35 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
     finally { setBusy(''); }
   };
 
+  const generateWallet = async () => {
+    setBusy('generate-wallet'); setError('');
+    try {
+      const result = await request<{ user: User; address: string }>('/api/wallet/generate', token, { method: 'POST' });
+      setCurrentUser(result.user); onUserUpdated(result.user);
+      setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
+      await load();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to generate wallet'); }
+    finally { setBusy(''); }
+  };
+
+  const sendPayment = async (event: FormEvent) => {
+    event.preventDefault(); setBusy('send-payment'); setError('');
+    try {
+      await request('/api/wallet/send', token, { method: 'POST', body: JSON.stringify({ ...sendForm, amountBeam: Number(sendForm.amountBeam) }) });
+      setSendForm({ address: '', amountBeam: '', note: '' });
+      await load();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to send payment'); }
+    finally { setBusy(''); }
+  };
+
   const total = payments.reduce((sum, item) => sum + item.amountBeam, 0);
   const secured = payments.filter((item) => ['funded','work_submitted','release_pending'].includes(item.status)).reduce((sum, item) => sum + item.amountBeam, 0);
   const paid = payments.filter((item) => item.status === 'released').reduce((sum, item) => sum + item.amountBeam, 0);
   const unread = notifications.filter((item) => !item.read).length;
-  const transactions = payments.flatMap((payment) => payment.transactions.map((transaction) => ({ ...transaction, paymentTitle: payment.title })));
+  const transactions = walletTransactions.map((transaction) => {
+    const payment = transaction.paymentRequestId ? payments.find((item) => item.id === transaction.paymentRequestId) : undefined;
+    return { ...transaction, paymentTitle: payment?.title ?? (transaction.kind === 'send' ? 'Direct send' : 'Wallet activity') };
+  });
   const confirmedTransactions = transactions.filter((transaction) => transaction.status === 'confirmed');
   const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(payment.status));
   const historyPayments = payments.filter((payment) => ['released','cancelled'].includes(payment.status) || payment.transactions.length > 0);
@@ -367,12 +397,28 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
               <p>Your freelancer releases and account transactions use this Beam address.</p>
               <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
               <div className="wallet-badges"><span>Private by default</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
+              <button className="secondary wallet-generate" disabled={busy === 'generate-wallet'} onClick={() => void generateWallet()}>{busy === 'generate-wallet' ? 'Generating...' : 'Generate wallet'}</button>
             </div>
             <div className="wallet-summary">
               <div><small>Protected now</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong></div>
               <div><small>Confirmed volume</small><strong>{confirmedTransactions.reduce((sum, transaction) => sum + transaction.amountBeam, 0).toLocaleString()} <em>BEAM</em></strong></div>
               <div><small>Transactions</small><strong>{transactions.length}</strong></div>
             </div>
+          </section>
+          <section className="wallet-tools">
+            <article>
+              <div className="card-kicker">Deposit address</div>
+              <h3>Receive BEAM</h3>
+              <p>Share this address or token with a payer to receive funds into your WorkingBeam wallet profile.</p>
+              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
+            </article>
+            <form className="send-payment-form" onSubmit={sendPayment}>
+              <div><div className="card-kicker">Send payment</div><h3>Send BEAM</h3><p>Submit a direct wallet transfer outside an escrow request.</p></div>
+              <label>Recipient address or token<input required minLength={10} value={sendForm.address} onChange={(event) => setSendForm({ ...sendForm, address: event.target.value })} placeholder="beam-recipient-wallet-address" /></label>
+              <label>Amount (BEAM)<input required type="number" min="0.00000001" step="0.00000001" value={sendForm.amountBeam} onChange={(event) => setSendForm({ ...sendForm, amountBeam: event.target.value })} /></label>
+              <label>Note <small>(optional)</small><input value={sendForm.note} onChange={(event) => setSendForm({ ...sendForm, note: event.target.value })} placeholder="Payment memo" /></label>
+              <button className="primary full" disabled={busy === 'send-payment'}>{busy === 'send-payment' ? 'Sending...' : 'Send payment'}</button>
+            </form>
           </section>
           <section className="section-heading wallet-section-heading"><div><h2>Transaction history</h2><p>Funding and release activity reported by the Beam wallet connection.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
           <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
