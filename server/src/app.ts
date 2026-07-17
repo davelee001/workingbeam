@@ -60,6 +60,11 @@ export function createApp(platform: PlatformService) {
     res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
   }));
 
+  app.get('/health', asyncRoute(async (_req, res) => {
+    const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', wallet, email });
+  }));
+
   app.get('/api', (_req, res) => {
     res.json({
       service: 'WorkingBeam API',
