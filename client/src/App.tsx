@@ -3,7 +3,7 @@ import './App.css';
 import { PublicPath, PublicSite } from './PublicSite';
 
 type Role = 'freelancer' | 'client';
-type DashboardScreen = 'overview' | 'payments' | 'wallet' | 'transactions' | 'escrow' | 'settings';
+type DashboardScreen = 'overview' | 'payments' | 'wallet' | 'transactions' | 'escrow' | 'settings' | 'outstanding' | 'history' | 'profile';
 type PaymentFilter = 'all' | 'active' | 'escrow' | 'completed' | 'disputed';
 type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'cancelled';
 
@@ -13,6 +13,7 @@ interface User {
   email: string;
   role: Role;
   walletAddress: string;
+  phone?: string;
   emailVerified: boolean;
 }
 
@@ -215,6 +216,7 @@ function PaymentCard({ payment, user, onAction }: {
 }
 
 function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token: string; onLogout: () => void }) {
+  const [currentUser, setCurrentUser] = useState(initialUser);
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -226,6 +228,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
   const [screen, setScreen] = useState<DashboardScreen>('overview');
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [form, setForm] = useState({ clientEmail: '', title: '', description: '', amountBeam: '', dueDate: '' });
+  const [profileForm, setProfileForm] = useState({ name: initialUser.name, phone: initialUser.phone ?? '', walletAddress: initialUser.walletAddress });
 
   const load = useCallback(async () => {
     try {
@@ -271,12 +274,24 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
     finally { setBusy(''); }
   };
 
+  const updateProfile = async (event: FormEvent) => {
+    event.preventDefault(); setBusy('profile'); setError('');
+    try {
+      const result = await request<{ user: User }>('/api/auth/me', token, { method: 'PATCH', body: JSON.stringify(profileForm) });
+      setCurrentUser(result.user);
+      setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to update profile'); }
+    finally { setBusy(''); }
+  };
+
   const total = payments.reduce((sum, item) => sum + item.amountBeam, 0);
   const secured = payments.filter((item) => ['funded','work_submitted','release_pending'].includes(item.status)).reduce((sum, item) => sum + item.amountBeam, 0);
   const paid = payments.filter((item) => item.status === 'released').reduce((sum, item) => sum + item.amountBeam, 0);
   const unread = notifications.filter((item) => !item.read).length;
   const transactions = payments.flatMap((payment) => payment.transactions.map((transaction) => ({ ...transaction, paymentTitle: payment.title })));
   const confirmedTransactions = transactions.filter((transaction) => transaction.status === 'confirmed');
+  const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(payment.status));
+  const historyPayments = payments.filter((payment) => ['released','cancelled'].includes(payment.status) || payment.transactions.length > 0);
   const filteredPayments = payments.filter((payment) => {
     if (paymentFilter === 'active') return !['released', 'disputed', 'cancelled'].includes(payment.status);
     if (paymentFilter === 'escrow') return ['funding_pending', 'funded', 'work_submitted', 'release_pending'].includes(payment.status);
@@ -298,10 +313,12 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
         <nav>
           <button className={screen === 'overview' ? 'active' : ''} onClick={() => setScreen('overview')}>Overview</button>
           <button className={screen === 'payments' ? 'active' : ''} onClick={() => setScreen('payments')}>Payments</button>
+          {currentUser.role === 'client' && <button className={screen === 'outstanding' ? 'active' : ''} onClick={() => setScreen('outstanding')}>Outstanding</button>}
+          {currentUser.role === 'client' && <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}>History</button>}
           <button className={screen === 'wallet' ? 'active' : ''} onClick={() => setScreen('wallet')}>Wallet</button>
-          <button className={screen === 'transactions' ? 'active' : ''} onClick={() => setScreen('transactions')}>Transactions</button>
           <button className={screen === 'escrow' ? 'active' : ''} onClick={() => setScreen('escrow')}>Escrow</button>
           <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}>Settings</button>
+          <button className={screen === 'profile' ? 'active' : ''} onClick={() => setScreen('profile')}>Profile</button>
         </nav>
         <div className="top-actions"><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>◌{unread > 0 && <b>{unread}</b>}</button><div className="profile"><div className="avatar">{initialUser.name.slice(0, 1)}</div><div><strong>{initialUser.name}</strong><small>{initialUser.role}</small></div></div><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
@@ -387,12 +404,47 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
         </>}
 
         {screen === 'settings' && <>
-          <section className="screen-heading"><div><p className="eyebrow dark">{initialUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Account settings</h1><p>Review your role, verified email state, and Beam receiving address.</p></div></section>
+          <section className="screen-heading"><div><p className="eyebrow dark">Workspace controls</p><h1>Settings</h1><p>Review account security, notification coverage, and operational safeguards.</p></div></section>
           <section className="settings-grid">
-            <article><small>Name</small><strong>{initialUser.name}</strong><span>{initialUser.role}</span></article>
-            <article><small>Email</small><strong>{initialUser.email}</strong><span>{initialUser.emailVerified ? 'Verified' : 'Verification paused'}</span></article>
-            <article><small>Beam address or token</small><code>{initialUser.walletAddress}</code><button className="secondary" onClick={() => void navigator.clipboard?.writeText(initialUser.walletAddress)}>Copy</button></article>
+            <article><small>Authentication</small><strong>{currentUser.emailVerified ? 'Email verified' : 'Verification paused'}</strong><span>Sessions use hashed bearer tokens and server-side ownership checks.</span></article>
+            <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, delivery, and confirmation activity is tracked in-app.</span></article>
+            <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development.' : 'Live Beam Wallet API is connected.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
+          </section>
+        </>}
+
+        {screen === 'outstanding' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">Client dashboard</p><h1>Outstanding requests</h1><p>Requests that still need approval, funding, review, release, confirmation, or dispute attention.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
+          <section className="payment-overview">
+            <div><span>Need approval</span><strong>{payments.filter((item) => item.status === 'pending').length}</strong></div>
+            <div><span>Ready to fund</span><strong>{payments.filter((item) => item.status === 'approved').length}</strong></div>
+            <div><span>Awaiting release</span><strong>{payments.filter((item) => item.status === 'work_submitted').length}</strong></div>
+            <div><span>Disputed</span><strong>{payments.filter((item) => item.status === 'disputed').length}</strong></div>
+          </section>
+          {paymentGrid(outstandingPayments)}
+        </>}
+
+        {screen === 'history' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">Client dashboard</p><h1>Payment history</h1><p>Completed requests and every payment request with recorded wallet activity.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
+          <section className="payment-overview">
+            <div><span>History items</span><strong>{historyPayments.length}</strong></div>
+            <div><span>Payments made</span><strong>{paid.toLocaleString()} <small>BEAM</small></strong></div>
+            <div><span>Transactions</span><strong>{transactions.length}</strong></div>
+            <div><span>Confirmed</span><strong>{confirmedTransactions.length}</strong></div>
+          </section>
+          {paymentGrid(historyPayments)}
+        </>}
+
+        {screen === 'profile' && <>
+          <section className="screen-heading"><div><p className="eyebrow dark">{currentUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Profile</h1><p>Update your display name, phone number, and Beam receiving address or payment token.</p></div></section>
+          <section className="profile-layout">
+            <form className="profile-form" onSubmit={updateProfile}>
+              <label>Full name<input required minLength={2} maxLength={80} value={profileForm.name} onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })} /></label>
+              <label>Phone <small>(optional)</small><input maxLength={40} value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} placeholder="+211 ..." /></label>
+              <label>Beam wallet address or token<input required minLength={10} value={profileForm.walletAddress} onChange={(event) => setProfileForm({ ...profileForm, walletAddress: event.target.value })} /></label>
+              <button className="primary full" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save profile'}</button>
+            </form>
+            <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
           </section>
         </>}
       </main>
