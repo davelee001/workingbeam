@@ -324,6 +324,61 @@ export class PlatformService {
     return toPublicUser(updated as User);
   }
 
+  async generateWallet(actor: PublicUser): Promise<{ user: PublicUser; address: string }> {
+    const address = await this.wallet.generateAddress(`WorkingBeam ${actor.email}`);
+    const validation = await this.wallet.validateAddress(address);
+    if (!validation.valid) throw new PlatformError('Generated Beam address could not be validated', 503, 'INVALID_GENERATED_ADDRESS');
+    let updated: User | undefined;
+    this.store.mutate((database) => {
+      const user = database.users.find((item) => item.id === actor.id) as User | undefined;
+      if (!user) throw new PlatformError('Account no longer exists', 404);
+      user.walletAddress = address;
+      updated = user;
+      database.auditEvents.push(this.audit(actor.id, 'wallet.generate', 'user', actor.id, { walletType: validation.type }));
+    });
+    return { user: toPublicUser(updated as User), address };
+  }
+
+  depositAddress(actor: PublicUser): { address: string; label: string; mode: BeamWallet['mode'] } {
+    return {
+      address: actor.walletAddress,
+      label: `WorkingBeam deposit address for ${actor.email}`,
+      mode: this.wallet.mode,
+    };
+  }
+
+  async sendPayment(actor: PublicUser, input: { address?: string; amountBeam?: number; note?: string }): Promise<{ transaction: BeamTransaction }> {
+    const address = input.address?.trim() ?? '';
+    if (address.length < 10) throw new PlatformError('A valid recipient Beam address or token is required');
+    if (!Number.isFinite(input.amountBeam) || (input.amountBeam ?? 0) <= 0 || (input.amountBeam ?? 0) > 1_000_000) {
+      throw new PlatformError('Amount must be between 0 and 1,000,000 BEAM');
+    }
+    const validation = await this.wallet.validateAddress(address);
+    if (!validation.valid) throw new PlatformError('The recipient Beam address or payment token is not valid', 400, 'INVALID_BEAM_ADDRESS');
+    const amountBeam = Number((input.amountBeam as number).toFixed(8));
+    const walletTransactionId = await this.wallet.send({
+      address,
+      amountBeam,
+      comment: input.note?.trim() || `WorkingBeam direct send by ${actor.id}`,
+    });
+    let transaction: BeamTransaction | undefined;
+    this.store.mutate((database) => {
+      transaction = {
+        id: randomUUID(),
+        walletTransactionId,
+        kind: 'send',
+        amountBeam,
+        fromUserId: actor.id,
+        status: 'pending',
+        createdAt: now(),
+      };
+      database.transactions.push(transaction);
+      database.notifications.push(this.notification(actor.id, 'Payment sent', `${amountBeam} BEAM was submitted to the Beam wallet.`));
+      database.auditEvents.push(this.audit(actor.id, 'wallet.send', 'transaction', transaction.id, { walletTransactionId }));
+    });
+    return { transaction: transaction as BeamTransaction };
+  }
+
   createPaymentRequest(actor: PublicUser, input: {
     clientEmail?: string; title?: string; description?: string; amountBeam?: number; dueDate?: string;
   }): PaymentView {
@@ -470,10 +525,23 @@ export class PlatformService {
     return this.paymentView(id, actor);
   }
 
-  async refreshTransaction(actor: PublicUser, transactionId: string): Promise<PaymentView> {
+  async refreshTransaction(actor: PublicUser, transactionId: string): Promise<PaymentView | { transaction: BeamTransaction }> {
     const database = this.store.read();
     const transaction = database.transactions.find((item) => item.id === transactionId);
     if (!transaction) throw new PlatformError('Transaction not found', 404);
+    if (!transaction.paymentRequestId) {
+      if (transaction.fromUserId !== actor.id && transaction.toUserId !== actor.id) throw new PlatformError('Access denied', 403);
+      const status = await this.wallet.transactionStatus(transaction.walletTransactionId);
+      let result: BeamTransaction | undefined;
+      this.store.mutate((draft) => {
+        const storedTransaction = draft.transactions.find((item) => item.id === transactionId) as BeamTransaction;
+        storedTransaction.status = status.status; storedTransaction.rawStatus = status.rawStatus;
+        if (status.status === 'confirmed') storedTransaction.confirmedAt = now();
+        result = storedTransaction;
+        draft.auditEvents.push(this.audit(actor.id, 'transaction.refresh', 'transaction', transactionId, { status: status.status }));
+      });
+      return { transaction: result as BeamTransaction };
+    }
     const view = this.paymentView(transaction.paymentRequestId, actor);
     if (transaction.status !== 'pending') return view;
     const status = await this.wallet.transactionStatus(transaction.walletTransactionId);
@@ -500,6 +568,19 @@ export class PlatformService {
     return this.store.read().notifications
       .filter((item) => item.userId === actor.id)
       .reverse();
+  }
+
+  listWalletTransactions(actor: PublicUser): BeamTransaction[] {
+    const paymentIds = new Set(
+      this.store.read().paymentRequests
+        .filter((request) => request.freelancerId === actor.id || request.clientId === actor.id)
+        .map((request) => request.id),
+    );
+    return this.store.read().transactions
+      .filter((transaction) => !transaction.paymentRequestId
+        ? transaction.fromUserId === actor.id || transaction.toUserId === actor.id
+        : paymentIds.has(transaction.paymentRequestId))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   markNotificationRead(actor: PublicUser, id: string): Notification {

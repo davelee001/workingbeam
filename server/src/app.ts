@@ -94,6 +94,22 @@ export function createApp(platform: PlatformService) {
     res.json({ user: await platform.updateProfile(req.user as PublicUser, req.body ?? {}) });
   }));
 
+  app.post('/api/wallet/generate', authenticate, asyncRoute(async (req, res) => {
+    res.json(await platform.generateWallet(req.user as PublicUser));
+  }));
+
+  app.get('/api/wallet/deposit-address', authenticate, asyncRoute((req, res) => {
+    res.json(platform.depositAddress(req.user as PublicUser));
+  }));
+
+  app.get('/api/wallet/transactions', authenticate, asyncRoute((req, res) => {
+    res.json({ transactions: platform.listWalletTransactions(req.user as PublicUser) });
+  }));
+
+  app.post('/api/wallet/send', authenticate, asyncRoute(async (req, res) => {
+    res.status(201).json(await platform.sendPayment(req.user as PublicUser, req.body ?? {}));
+  }));
+
   app.get('/api/payment-requests', authenticate, asyncRoute((req, res) => {
     res.json({ paymentRequests: platform.listPaymentRequests(req.user as PublicUser) });
   }));
