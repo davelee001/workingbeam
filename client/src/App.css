@@ -233,6 +233,11 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .profile-summary h2 { margin:4px 0 0; font:700 25px 'Manrope'; color:var(--ink); }
 .profile-summary p { margin:0; overflow-wrap:anywhere; }
 .profile-summary span { display:inline-flex; padding:7px 10px; border-radius:999px; color:#0b6045; background:#e5f6ee; font-size:12px; font-weight:700; text-transform:capitalize; }
+.profile-details { gap:14px; }
+.profile-details>div { display:grid; gap:5px; padding-bottom:13px; border-bottom:1px solid var(--line); }
+.profile-details small { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
+.profile-details strong,.profile-details code { color:var(--ink); overflow-wrap:anywhere; }
+.profile-form-actions { display:flex; justify-content:flex-end; gap:10px; }
 
 /* Panels and modal */
 .notifications { position:fixed; z-index:30; right:18px; top:78px; width:min(390px,calc(100vw - 36px)); max-height:calc(100vh - 96px); overflow:auto; background:#f6dfe8; border:1px solid var(--line); border-radius:12px; padding:18px; box-shadow:0 25px 70px rgba(79,36,52,.2); }

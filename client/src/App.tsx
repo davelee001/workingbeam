@@ -226,6 +226,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
   const [busy, setBusy] = useState('');
   const [walletMode, setWalletMode] = useState('checking');
   const [screen, setScreen] = useState<DashboardScreen>('overview');
+  const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [form, setForm] = useState({ clientEmail: '', title: '', description: '', amountBeam: '', dueDate: '' });
   const [profileForm, setProfileForm] = useState({ name: initialUser.name, phone: initialUser.phone ?? '', walletAddress: initialUser.walletAddress });
@@ -281,6 +282,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
       setCurrentUser(result.user);
       onUserUpdated(result.user);
       setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
+      setProfileEditing(false);
+      window.location.reload();
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to update profile'); }
     finally { setBusy(''); }
   };
@@ -434,14 +437,14 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUse
         </>}
 
         {screen === 'profile' && <>
-          <section className="screen-heading"><div><p className="eyebrow dark">{currentUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Profile</h1><p>Update your display name, phone number, and Beam receiving address or payment token.</p></div></section>
+          <section className="screen-heading"><div><p className="eyebrow dark">{currentUser.role === 'client' ? 'Client profile' : 'Freelancer profile'}</p><h1>Profile</h1><p>Review your account details. Use edit profile when you want to change your information.</p></div>{!profileEditing && <button className="primary" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button>}</section>
           <section className="profile-layout">
-            <form className="profile-form" onSubmit={updateProfile}>
+            {profileEditing ? <form className="profile-form" onSubmit={updateProfile}>
               <label>Full name<input required minLength={2} maxLength={80} value={profileForm.name} onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })} /></label>
               <label>Phone <small>(optional)</small><input maxLength={40} value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} placeholder="+211 ..." /></label>
               <label>Beam wallet address or token<input required minLength={10} value={profileForm.walletAddress} onChange={(event) => setProfileForm({ ...profileForm, walletAddress: event.target.value })} /></label>
-              <button className="primary full" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save profile'}</button>
-            </form>
+              <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
+            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div></section>}
             <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
           </section>
         </>}
