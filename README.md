@@ -120,6 +120,8 @@ The Transactions screen separates blockchain activity from the wallet summary:
 - Complete wallet transaction IDs for reconciliation
 - Empty state that routes users back to payment activity
 
+Client users also have a dedicated **Payment History** screen that combines completed requests with payment requests that have wallet transaction activity.
+
 ### Escrow
 
 The Escrow screen focuses only on protected or release-relevant requests:
@@ -129,13 +131,22 @@ The Escrow screen focuses only on protected or release-relevant requests:
 - Held escrow value in BEAM
 - Disputed requests and release-pending work
 
+Client users also have a dedicated **Outstanding Requests** screen for requests that still need approval, funding, review, release, confirmation, or dispute attention.
+
 ### Settings and Profile
 
-The Settings screen gives each signed-in user a profile and account review area:
+The Settings screen gives each signed-in user an account controls area:
 
-- Name, role, email, and verification state
-- Beam receiving address or payment token with copy action
+- Authentication and verification state
+- Notification coverage
+- Mock or live wallet mode
 - Security summary for role, ownership, wallet, and payment-state checks
+
+The Profile screen is editable:
+
+- Display name
+- Optional phone number
+- Beam receiving address or payment token, revalidated server-side before saving
 
 ### Notifications
 
