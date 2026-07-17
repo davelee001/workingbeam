@@ -284,6 +284,14 @@ SUPABASE_STATE_ROW_ID=default
 
 `SUPABASE_SERVICE_ROLE_KEY` is a server-only secret. Do not expose it in the React client or commit it to Git.
 
+After restarting the backend, confirm Supabase is active by opening `/api/health` or `/health` and checking:
+
+```json
+"database": { "mode": "supabase" }
+```
+
+If a service-role key was shared in chat, screenshots, or logs, rotate it in Supabase after setup is confirmed because it has server-side database privileges.
+
 For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Email verification defaults to enabled in production unless explicitly overridden. Startup fails if required production security configuration is missing.
 
 ### Run
