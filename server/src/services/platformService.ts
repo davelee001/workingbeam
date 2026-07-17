@@ -299,22 +299,27 @@ export class PlatformService {
     if (name.length < 2 || name.length > 80) throw new PlatformError('Name must be between 2 and 80 characters');
     if (phone.length > 40) throw new PlatformError('Phone must be 40 characters or fewer');
     if (walletAddress.length < 10) throw new PlatformError('A valid Beam wallet address or payment token is required');
-    let addressValidation;
-    try {
-      addressValidation = await this.wallet.validateAddress(walletAddress);
-    } catch {
-      throw new PlatformError('Beam wallet validation is temporarily unavailable', 503, 'WALLET_VALIDATION_UNAVAILABLE');
-    }
-    if (!addressValidation.valid) throw new PlatformError('The Beam wallet address or payment token is not valid', 400, 'INVALID_BEAM_ADDRESS');
     let updated: User | undefined;
+    const existing = this.store.read().users.find((item) => item.id === actor.id);
+    if (!existing) throw new PlatformError('Account no longer exists', 404);
+    let walletType = 'unchanged';
+    if (walletAddress !== existing.walletAddress) {
+      let addressValidation;
+      try {
+        addressValidation = await this.wallet.validateAddress(walletAddress);
+      } catch {
+        throw new PlatformError('Beam wallet validation is temporarily unavailable', 503, 'WALLET_VALIDATION_UNAVAILABLE');
+      }
+      if (!addressValidation.valid) throw new PlatformError('The Beam wallet address or payment token is not valid', 400, 'INVALID_BEAM_ADDRESS');
+      walletType = addressValidation.type ?? 'validated';
+    }
     this.store.mutate((database) => {
-      const user = database.users.find((item) => item.id === actor.id);
-      if (!user) throw new PlatformError('Account no longer exists', 404);
+      const user = database.users.find((item) => item.id === actor.id) as User;
       user.name = name;
       user.phone = phone || undefined;
       user.walletAddress = walletAddress;
       updated = user;
-      database.auditEvents.push(this.audit(actor.id, 'profile.update', 'user', actor.id, { walletType: addressValidation.type }));
+      database.auditEvents.push(this.audit(actor.id, 'profile.update', 'user', actor.id, { walletType }));
     });
     return toPublicUser(updated as User);
   }
