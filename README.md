@@ -58,12 +58,27 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Client escrow release to the freelancer wallet
 - Dispute opening by either party while funds are held
 - In-app notification outbox with email, SMS, and push channel intent
+- Public website with Landing, About, Features, Pricing, Documentation, and Contact pages
+- Contact inquiry capture with validation, rate limiting, bot honeypot handling, JSON persistence, and audit logging
 - Durable JSON storage with atomic file replacement
 - Audit history for authentication, payment, escrow, and transaction activity
 - Request-size limits, API rate limiting, and hidden Express signature
 - Responsive freelancer/client workspace with dedicated Overview, Payments, and Wallet screens
 
 ## Product Screens
+
+### Public Website
+
+Unauthenticated visitors now land on a full public website instead of the sign-in screen:
+
+- **Landing page:** product positioning, protected payment workflow, and role-specific entry points
+- **About:** purpose, operating values, and the user-to-blockchain architecture
+- **Features:** payment requests, escrow, Beam confirmation, disputes, wallet validation, audit history, and notifications
+- **Pricing:** beta pricing preview with clear notice that automated billing is not active yet
+- **Documentation:** local setup, payment lifecycle, Wallet API configuration, and security notes
+- **Contact:** validated inquiry form for product, integration, security, and partnership messages
+
+Sign in remains available at `/auth`; account creation is available at `/auth?mode=register`.
 
 ### Overview
 
@@ -155,6 +170,8 @@ working-beam/
 |   |-- src/
 |   |   |-- App.tsx
 |   |   |-- App.css
+|   |   |-- PublicSite.tsx
+|   |   |-- PublicSite.css
 |   |   `-- index.tsx
 |   |-- package.json
 |   `-- tsconfig.json
@@ -214,7 +231,8 @@ For a real deployment, set `NODE_ENV=production`, configure a random verificatio
 npm run dev
 ```
 
-- Web app: <http://localhost:3000>
+- Public website: <http://localhost:3000>
+- Sign in: <http://localhost:3000/auth>
 - API: <http://localhost:5000>
 - Health and wallet mode: <http://localhost:5000/api/health>
 
@@ -240,11 +258,11 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, and audit events.
+The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, transaction confirmation, disputes, notification creation, contact inquiry capture, bot honeypot handling, and audit events.
 
 ### Current Verification
 
-- 13 security and platform tests passing
+- 15 security and platform tests passing
 - Server TypeScript build passing
 - React production build passing
 - Responsive navigation available on desktop and mobile
@@ -275,6 +293,7 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/api/health` | API and wallet-adapter status |
+| `POST` | `/api/contact` | Store a validated public contact inquiry |
 | `POST` | `/api/auth/register` | Create freelancer/client account |
 | `POST` | `/api/auth/verify-email` | Activate an account with the emailed six-digit code |
 | `POST` | `/api/auth/resend-verification` | Send a replacement code after the resend cooldown |
