@@ -215,7 +215,7 @@ function PaymentCard({ payment, user, onAction }: {
   );
 }
 
-function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token: string; onLogout: () => void }) {
+function Dashboard({ initialUser, token, onLogout, onUserUpdated }: { initialUser: User; token: string; onLogout: () => void; onUserUpdated: (user: User) => void }) {
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -279,6 +279,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
     try {
       const result = await request<{ user: User }>('/api/auth/me', token, { method: 'PATCH', body: JSON.stringify(profileForm) });
       setCurrentUser(result.user);
+      onUserUpdated(result.user);
       setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to update profile'); }
     finally { setBusy(''); }
@@ -302,7 +303,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
 
   const paymentGrid = (items: PaymentRequest[]) => (
     <section className="payments-grid">
-      {items.length === 0 ? <div className="empty-state"><div>↗</div><h3>{payments.length === 0 ? 'No payment requests yet' : 'No requests match this filter'}</h3><p>{payments.length === 0 ? (initialUser.role === 'freelancer' ? 'Create your first request after agreeing on work with a client.' : 'Requests sent to your account will appear here.') : 'Try another payment status to see more activity.'}</p>{payments.length === 0 && initialUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>Create request</button>}</div> : items.map((payment) => <PaymentCard key={payment.id} payment={payment} user={initialUser} onAction={(action, item) => { if (!busy) void act(action, item); }} />)}
+      {items.length === 0 ? <div className="empty-state"><div>↗</div><h3>{payments.length === 0 ? 'No payment requests yet' : 'No requests match this filter'}</h3><p>{payments.length === 0 ? (currentUser.role === 'freelancer' ? 'Create your first request after agreeing on work with a client.' : 'Requests sent to your account will appear here.') : 'Try another payment status to see more activity.'}</p>{payments.length === 0 && currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>Create request</button>}</div> : items.map((payment) => <PaymentCard key={payment.id} payment={payment} user={currentUser} onAction={(action, item) => { if (!busy) void act(action, item); }} />)}
     </section>
   );
 
@@ -324,11 +325,11 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
         {error && <div className="error-banner dashboard-error">{error}</div>}
 
         {screen === 'overview' && <>
-          <section className="welcome"><div><p className="eyebrow dark">{initialUser.role} workspace</p><h1>Good to see you, {initialUser.name.split(' ')[0]}.</h1><p>Here is what is happening with your work and payments.</p></div>{initialUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="welcome"><div><p className="eyebrow dark">{currentUser.role} workspace</p><h1>Good to see you, {currentUser.name.split(' ')[0]}.</h1><p>Here is what is happening with your work and payments.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
           <section className="metrics">
             <div><small>Total requested</small><strong>{total.toLocaleString()} <em>BEAM</em></strong><span>Across {payments.length} request{payments.length === 1 ? '' : 's'}</span></div>
             <div><small>Protected in escrow</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong><span className="positive">Funds secured</span></div>
-            <div><small>{initialUser.role === 'freelancer' ? 'Total received' : 'Total released'}</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>Confirmed on chain</span></div>
+            <div><small>{currentUser.role === 'freelancer' ? 'Total received' : 'Total released'}</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>Confirmed on chain</span></div>
             <div><small>Wallet connection</small><strong className="wallet-state"><i />{walletMode}</strong><span>{walletMode === 'mock' ? 'Local development mode' : 'Beam Wallet API'}</span></div>
           </section>
           <section className="section-heading"><div><h2>Payment activity</h2><p>Follow each request from approval to blockchain confirmation.</p></div><div className="heading-actions"><button className="secondary" onClick={() => void load()}>Refresh</button>{payments.length > 2 && <button className="secondary" onClick={() => setScreen('payments')}>View all</button>}</div></section>
@@ -336,7 +337,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
         </>}
 
         {screen === 'payments' && <>
-          <section className="screen-heading"><div><p className="eyebrow dark">Payment center</p><h1>Requests and escrow</h1><p>Manage approvals, delivery, disputes, and every on-chain confirmation.</p></div>{initialUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="screen-heading"><div><p className="eyebrow dark">Payment center</p><h1>Requests and escrow</h1><p>Manage approvals, delivery, disputes, and every on-chain confirmation.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
           <section className="payment-overview">
             <div><span>All requests</span><strong>{payments.length}</strong></div>
             <div><span>Active</span><strong>{payments.filter((item) => !['released','disputed','cancelled'].includes(item.status)).length}</strong></div>
@@ -358,10 +359,10 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
           <section className="wallet-layout">
             <div className="wallet-address-card">
               <div className="card-kicker">Receiving wallet</div>
-              <h2>{initialUser.name}</h2>
+              <h2>{currentUser.name}</h2>
               <p>Your freelancer releases and account transactions use this Beam address.</p>
-              <div className="address-box"><code>{initialUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(initialUser.walletAddress)}>Copy</button></div>
-              <div className="wallet-badges"><span>Private by default</span><span>{initialUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
+              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
+              <div className="wallet-badges"><span>Private by default</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
             </div>
             <div className="wallet-summary">
               <div><small>Protected now</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong></div>
@@ -390,7 +391,7 @@ function Dashboard({ initialUser, token, onLogout }: { initialUser: User; token:
         </>}
 
         {screen === 'escrow' && <>
-          <section className="screen-heading"><div><p className="eyebrow dark">Escrow overview</p><h1>Protected payments</h1><p>Track funds that are approved, pending confirmation, held, submitted, disputed, or ready for release.</p></div>{initialUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="screen-heading"><div><p className="eyebrow dark">Escrow overview</p><h1>Protected payments</h1><p>Track funds that are approved, pending confirmation, held, submitted, disputed, or ready for release.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
           <section className="payment-overview">
             <div><span>Approved</span><strong>{payments.filter((item) => item.status === 'approved').length}</strong></div>
             <div><span>Funding pending</span><strong>{payments.filter((item) => item.status === 'funding_pending').length}</strong></div>
@@ -486,7 +487,7 @@ function App() {
     navigate('/auth');
   };
   if (checking) return <div className="loading-screen"><div className="brand">Working<span>Beam</span></div><i /></div>;
-  if (user && token) return <Dashboard initialUser={user} token={token} onLogout={logout} />;
+  if (user && token) return <Dashboard initialUser={user} token={token} onLogout={logout} onUserUpdated={setUser} />;
   const [publicPath, queryString = ''] = route.split('?');
   if (publicPath === '/auth') {
     return <AuthScreen onAuthenticated={authenticated} initialRegistering={new URLSearchParams(queryString).get('mode') === 'register'} />;
