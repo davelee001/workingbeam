@@ -58,6 +58,7 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Freelancer delivery notes
 - Client escrow release to the freelancer wallet
 - Downloadable text receipts for paid requests
+- Failed and expired payment request states with dashboard filters and notifications
 - Dispute opening by either party while funds are held
 - In-app notification outbox with email, SMS, and push channel intent
 - Public website with Landing, About, Features, Pricing, Documentation, and Contact pages
@@ -87,6 +88,7 @@ Sign in remains available at `/auth`; account creation is available at `/auth?mo
 The Overview screen is the operating summary for either role:
 
 - Total requested, protected escrow, and confirmed payment metrics
+- Monthly revenue, active contracts, spending/pipeline analytics, and attention-needed counts
 - Beam wallet connection mode
 - Recent payment activity and current lifecycle state
 - Direct access to payment creation for freelancers
@@ -183,7 +185,9 @@ pending
   -> released
 ```
 
-`funded` and `work_submitted` payments can enter `disputed`. Failed blockchain funding returns the request to `approved`; a failed release returns it to `work_submitted`. State checks prevent duplicate funding, approval, and release actions.
+`funded` and `work_submitted` payments can enter `disputed`. Failed blockchain funding or release confirmations mark the request as `failed` for clear user-facing recovery. State checks prevent duplicate funding, approval, and release actions.
+
+Failed wallet confirmations now mark the visible payment request as `failed` so either party can spot the issue from Payments, Outstanding Requests, History, and notifications. Pending or approved requests whose due date has passed are automatically marked `expired` when payment data is loaded.
 
 ## Beam Integration
 
@@ -212,6 +216,7 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **Persistence:** atomic JSON store for local development or Supabase Postgres JSONB state for hosted deployment
 - **Authentication:** scrypt password hashes and expiring bearer sessions
 - **Email:** SMTP through Nodemailer with hashed, expiring activation codes
+- **Push:** payment events include push channel intent; a production push provider still needs to be connected for device delivery
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
 - **Tests:** Node.js built-in test runner
 
