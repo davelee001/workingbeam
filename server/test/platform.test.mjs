@@ -128,6 +128,17 @@ test('freelancer creates a request and client receives a notification', async ()
   );
 });
 
+test('fraud rules block high-risk payment requests before creation', async () => {
+  const { platform, store, freelancerAuth, clientAuth } = await fixture();
+  assert.throws(
+    () => platform.createPaymentRequest(freelancerAuth.user, {
+      clientEmail: clientAuth.user.email, title: 'High risk milestone', amountBeam: 100000,
+    }),
+    /manual review/,
+  );
+  assert.equal(store.read().auditEvents.some((event) => event.action === 'fraud.payment_request_blocked'), true);
+});
+
 test('payment follows approval, escrow, delivery, release, and confirmation lifecycle', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   let payment = platform.createPaymentRequest(freelancerAuth.user, {
