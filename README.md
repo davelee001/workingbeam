@@ -325,6 +325,8 @@ If a service-role key was shared in chat, screenshots, or logs, rotate it in Sup
 
 For a real deployment, set `NODE_ENV=production`, configure a random verification-code pepper, SMTP, a TLS-protected Beam Wallet API, an ACL key, and a valid escrow token. Email verification defaults to enabled in production unless explicitly overridden. Startup fails if required production security configuration is missing.
 
+Use `server/.env.production.example` as the production configuration checklist. After deploying, verify `/api/health` or `/health` shows the expected database mode, live wallet mode, SMTP availability, push webhook availability, and HTTPS enforcement before routing real users or funds.
+
 ### Run
 
 ```bash
