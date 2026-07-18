@@ -66,6 +66,9 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Durable JSON storage with atomic file replacement
 - Audit history for authentication, payment, escrow, and transaction activity
 - Request-size limits, API rate limiting, and hidden Express signature
+- Production HTTPS enforcement through `FORCE_HTTPS=true` behind a trusted proxy
+- Push notification webhook delivery adapter with production HTTPS validation
+- Basic fraud detection that blocks high-risk payment-request amounts and same-day request velocity
 - Responsive freelancer/client workspace with dedicated Overview, Payments, and Wallet screens
 
 ## Product Screens
@@ -226,6 +229,8 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **Authentication:** scrypt password hashes and expiring bearer sessions
 - **Email:** SMTP through Nodemailer with hashed, expiring activation codes
 - **Push:** payment events include push channel intent; a production push provider still needs to be connected for device delivery
+- **HTTPS:** production startup requires explicit HTTPS enforcement so deployments do not accidentally serve the API over plain HTTP
+- **Fraud:** high-value and high-velocity payment request creation is blocked and audited for manual review
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
 - **Tests:** Node.js built-in test runner
 
@@ -374,10 +379,13 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | `SUPABASE_SERVICE_ROLE_KEY` | empty | Server-only Supabase service-role key used to read/write `workingbeam_state` |
 | `SUPABASE_STATE_ROW_ID` | `default` | Logical row ID for the JSONB state document |
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
+| `FORCE_HTTPS` | `false` in development; required as `true` in production | Rejects non-HTTPS requests behind a trusted reverse proxy |
 | `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` in example; production defaults to `true` | Enables email-code activation without removing the verification implementation |
 | `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
 | `EMAIL_FROM` | example sender | Verified sender used for activation messages |
+| `PUSH_WEBHOOK_URL` | empty in development | HTTPS push-provider webhook; mandatory in production |
+| `PUSH_WEBHOOK_TOKEN` | empty | Optional bearer token sent to the push webhook |
 | `BEAM_WALLET_API_URL` | empty | Live endpoint, for example `https://wallet.internal/api/wallet` |
 | `BEAM_WALLET_API_KEY` | empty | Wallet API ACL key |
 | `BEAM_ESCROW_ADDRESS` | empty | Custodial escrow wallet address/token |
@@ -432,9 +440,9 @@ The repository is a functional MVP, not a production custody deployment. Before 
 
 - Replace JSON storage with PostgreSQL and database transactions.
 - Store session and wallet secrets in a managed secret store.
-- Put the API behind HTTPS, a reverse proxy, and distributed rate limiting.
+- Put the API behind a managed TLS reverse proxy and distributed rate limiting.
 - Add phone verification, MFA, password reset, and user-facing session management.
-- Connect the notification outbox to production email, SMS, and push providers.
+- Connect SMS delivery and provider-specific push token registration.
 - Add signed webhooks or a background confirmation worker instead of manual refresh.
 - Add an administrator/arbitrator workflow for disputes and refunds.
 - Implement ledger reconciliation, withdrawal controls, and wallet balance monitoring.
