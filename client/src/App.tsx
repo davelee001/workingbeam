@@ -550,7 +550,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <article><small>Email</small><strong>{emailAvailable ? emailMode : 'Needs setup'}</strong><span>{emailMode === 'smtp' ? 'Production SMTP health is checked by the API.' : 'Console/memory email is development-only; configure SMTP for production.'}</span></article>
             <article><small>Push notifications</small><strong>{pushAvailable ? pushMode : 'Needs setup'}</strong><span>{pushMode === 'webhook' ? 'Push webhook provider is configured.' : 'Payment events include push intent; configure a provider for device delivery.'}</span></article>
             <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
-            <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development.' : 'Live Beam Wallet API is connected.'}</span></article>
+            <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development; private transactions are simulated.' : 'Live Beam Wallet API is connected for private Beam transactions.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
           </section>
         </>}
