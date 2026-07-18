@@ -4,8 +4,8 @@ import { PublicPath, PublicSite } from './PublicSite';
 
 type Role = 'freelancer' | 'client';
 type DashboardScreen = 'overview' | 'payments' | 'wallet' | 'transactions' | 'escrow' | 'settings' | 'outstanding' | 'history' | 'profile';
-type PaymentFilter = 'all' | 'active' | 'escrow' | 'completed' | 'disputed';
-type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'cancelled';
+type PaymentFilter = 'all' | 'active' | 'escrow' | 'completed' | 'disputed' | 'failed' | 'expired';
+type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'failed' | 'expired' | 'cancelled';
 type PaymentCurrency = 'USD' | 'EUR' | 'GBP' | 'SSP' | 'UGX' | 'KSH' | 'TSH' | 'SDG';
 
 interface User {
@@ -52,12 +52,13 @@ interface AppNotification {
   message: string;
   read: boolean;
   createdAt: string;
+  channels?: Array<'in_app' | 'email' | 'sms' | 'push'>;
 }
 
 const statusLabels: Record<PaymentStatus, string> = {
   pending: 'Awaiting approval', approved: 'Ready to fund', funding_pending: 'Funding confirmation',
   funded: 'Escrow funded', work_submitted: 'Work submitted', release_pending: 'Release confirmation',
-  released: 'Paid', disputed: 'Disputed', cancelled: 'Cancelled',
+  released: 'Paid', disputed: 'Disputed', failed: 'Failed', expired: 'Expired', cancelled: 'Cancelled',
 };
 const paymentCurrencies: PaymentCurrency[] = ['USD', 'EUR', 'GBP', 'SSP', 'UGX', 'KSH', 'TSH', 'SDG'];
 
@@ -290,6 +291,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   const [walletMode, setWalletMode] = useState('checking');
+  const [emailMode, setEmailMode] = useState('checking');
+  const [emailAvailable, setEmailAvailable] = useState(false);
   const [screen, setScreen] = useState<DashboardScreen>(initialScreen);
   const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
@@ -302,9 +305,9 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       const [paymentData, notificationData, health] = await Promise.all([
         request<{ paymentRequests: PaymentRequest[] }>('/api/payment-requests', token),
         request<{ notifications: AppNotification[] }>('/api/notifications', token),
-        request<{ wallet: { mode: string } }>('/api/health'),
+        request<{ wallet: { mode: string }; email: { mode: string; available: boolean } }>('/api/health'),
       ]);
-      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode);
+      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available);
       const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
       setWalletTransactions(walletData.transactions);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
@@ -381,19 +384,28 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const total = payments.reduce((sum, item) => sum + item.amountBeam, 0);
   const secured = payments.filter((item) => ['funded','work_submitted','release_pending'].includes(item.status)).reduce((sum, item) => sum + item.amountBeam, 0);
   const paid = payments.filter((item) => item.status === 'released').reduce((sum, item) => sum + item.amountBeam, 0);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyRevenue = payments.filter((item) => item.status === 'released' && item.createdAt.slice(0, 7) === currentMonth).reduce((sum, item) => sum + item.amountBeam, 0);
+  const activePayments = payments.filter((item) => ['approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(item.status));
+  const activeContracts = new Set(activePayments.map((item) => currentUser.role === 'client' ? item.freelancerId : item.clientId)).size;
+  const pendingSpend = payments.filter((item) => ['pending','approved','funding_pending'].includes(item.status)).reduce((sum, item) => sum + item.amountBeam, 0);
+  const failedPayments = payments.filter((item) => item.status === 'failed').length;
+  const expiredPayments = payments.filter((item) => item.status === 'expired').length;
   const unread = notifications.filter((item) => !item.read).length;
   const transactions = walletTransactions.map((transaction) => {
     const payment = transaction.paymentRequestId ? payments.find((item) => item.id === transaction.paymentRequestId) : undefined;
     return { ...transaction, paymentTitle: payment?.title ?? (transaction.kind === 'send' ? 'Direct send' : 'Wallet activity') };
   });
   const confirmedTransactions = transactions.filter((transaction) => transaction.status === 'confirmed');
-  const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(payment.status));
-  const historyPayments = payments.filter((payment) => ['released','cancelled'].includes(payment.status) || payment.transactions.length > 0);
+  const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed','failed'].includes(payment.status));
+  const historyPayments = payments.filter((payment) => ['released','cancelled','failed','expired'].includes(payment.status) || payment.transactions.length > 0);
   const filteredPayments = payments.filter((payment) => {
-    if (paymentFilter === 'active') return !['released', 'disputed', 'cancelled'].includes(payment.status);
+    if (paymentFilter === 'active') return !['released', 'disputed', 'failed', 'expired', 'cancelled'].includes(payment.status);
     if (paymentFilter === 'escrow') return ['funding_pending', 'funded', 'work_submitted', 'release_pending'].includes(payment.status);
     if (paymentFilter === 'completed') return payment.status === 'released';
     if (paymentFilter === 'disputed') return payment.status === 'disputed';
+    if (paymentFilter === 'failed') return payment.status === 'failed';
+    if (paymentFilter === 'expired') return payment.status === 'expired';
     return true;
   });
 
@@ -416,7 +428,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
         </nav>
         <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setScreen('profile')}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
-      {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
+      {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><div className="notice-channels">{(item.channels ?? ['in_app']).map((channel) => <span key={channel}>{channel.replace('_', ' ')}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
         {error && <div className="error-banner dashboard-error">{error}</div>}
 
@@ -428,6 +440,12 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <div><small>{currentUser.role === 'freelancer' ? 'Total received' : 'Total released'}</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>Confirmed on chain</span></div>
             <div><small>Wallet connection</small><strong className="wallet-state"><i />{walletMode}</strong><span>{walletMode === 'mock' ? 'Local development mode' : 'Beam Wallet API'}</span></div>
           </section>
+          <section className="analytics-strip">
+            <div><small>Monthly revenue</small><strong>{monthlyRevenue.toLocaleString()} <em>BEAM</em></strong><span>Paid this month</span></div>
+            <div><small>Active contracts</small><strong>{activeContracts}</strong><span>Counterparties with live work</span></div>
+            <div><small>{currentUser.role === 'client' ? 'Spending analytics' : 'Pipeline analytics'}</small><strong>{pendingSpend.toLocaleString()} <em>BEAM</em></strong><span>{currentUser.role === 'client' ? 'Pending approval/funding' : 'Pending client movement'}</span></div>
+            <div><small>Attention needed</small><strong>{failedPayments + expiredPayments}</strong><span>{failedPayments} failed · {expiredPayments} expired</span></div>
+          </section>
           <section className="section-heading"><div><h2>Payment activity</h2><p>Follow each request from approval to blockchain confirmation.</p></div><div className="heading-actions"><button className="secondary" onClick={() => void load()}>Refresh</button>{payments.length > 2 && <button className="secondary" onClick={() => setScreen('payments')}>View all</button>}</div></section>
           {paymentGrid(payments.slice(0, 4))}
         </>}
@@ -436,12 +454,12 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className="screen-heading"><div><p className="eyebrow dark">Payment center</p><h1>Requests and escrow</h1><p>Manage approvals, delivery, disputes, and every on-chain confirmation.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
           <section className="payment-overview">
             <div><span>All requests</span><strong>{payments.length}</strong></div>
-            <div><span>Active</span><strong>{payments.filter((item) => !['released','disputed','cancelled'].includes(item.status)).length}</strong></div>
+            <div><span>Active</span><strong>{payments.filter((item) => !['released','disputed','failed','expired','cancelled'].includes(item.status)).length}</strong></div>
             <div><span>In escrow</span><strong>{secured.toLocaleString()} <small>BEAM</small></strong></div>
             <div><span>Completed</span><strong>{payments.filter((item) => item.status === 'released').length}</strong></div>
           </section>
           <section className="payments-toolbar">
-            <div className="filter-tabs">{(['all','active','escrow','completed','disputed'] as PaymentFilter[]).map((filter) => <button key={filter} className={paymentFilter === filter ? 'active' : ''} onClick={() => setPaymentFilter(filter)}>{filter}</button>)}</div>
+            <div className="filter-tabs">{(['all','active','escrow','completed','disputed','failed','expired'] as PaymentFilter[]).map((filter) => <button key={filter} className={paymentFilter === filter ? 'active' : ''} onClick={() => setPaymentFilter(filter)}>{filter}</button>)}</div>
             <button className="secondary" onClick={() => void load()}>Refresh</button>
           </section>
           {paymentGrid(filteredPayments)}
@@ -458,7 +476,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <h2>{currentUser.name}</h2>
               <p>Your freelancer releases and account transactions use this Beam address.</p>
               <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
-              <div className="wallet-badges"><span>Private by default</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
+              <div className="wallet-badges"><span>{walletMode === 'mock' ? 'Privacy simulated in mock mode' : 'Private Beam transactions'}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
               <button className="secondary wallet-generate" disabled={busy === 'generate-wallet'} onClick={() => void generateWallet()}>{busy === 'generate-wallet' ? 'Generating...' : 'Generate wallet'}</button>
             </div>
             <div className="wallet-summary">
@@ -486,7 +504,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
             {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No wallet activity yet</h3><p>Transactions will appear after a client funds the first approved request.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : <>{transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : 'Freelancer release'}</span></div><code>{transaction.walletTransactionId.slice(0, 20)}…</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}</>}
           </section>
-          <section className="wallet-security"><div>✓</div><div><h3>Wallet security</h3><p>WorkingBeam never asks for your Beam seed phrase. Live wallet credentials remain server-side and should be protected with TLS, ACL, and IP allowlisting.</p></div></section>
+          <section className="wallet-security"><div>✓</div><div><h3>Wallet security and privacy</h3><p>WorkingBeam never asks for your Beam seed phrase. Private transaction behavior is provided by the connected live Beam wallet; mock mode simulates the workflow without real privacy guarantees or real funds.</p></div></section>
         </>}
 
         {screen === 'transactions' && <>
@@ -517,7 +535,9 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className="screen-heading"><div><p className="eyebrow dark">Workspace controls</p><h1>Settings</h1><p>Review account security, notification coverage, and operational safeguards.</p></div></section>
           <section className="settings-grid">
             <article><small>Authentication</small><strong>{currentUser.emailVerified ? 'Email verified' : 'Verification paused'}</strong><span>Sessions use hashed bearer tokens and server-side ownership checks.</span></article>
-            <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, delivery, and confirmation activity is tracked in-app.</span></article>
+            <article><small>Email</small><strong>{emailAvailable ? emailMode : 'Needs setup'}</strong><span>{emailMode === 'smtp' ? 'Production SMTP health is checked by the API.' : 'Console/memory email is development-only; configure SMTP for production.'}</span></article>
+            <article><small>Push notifications</small><strong>Channel ready</strong><span>Payment events include push channel intent; connect a push provider for device delivery.</span></article>
+            <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
             <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development.' : 'Live Beam Wallet API is connected.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
           </section>
