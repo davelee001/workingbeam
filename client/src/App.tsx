@@ -569,8 +569,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className="payment-overview">
             <div><span>History items</span><strong>{historyPayments.length}</strong></div>
             <div><span>Payments made</span><strong>{paid.toLocaleString()} <small>BEAM</small></strong></div>
-            <div><span>Transactions</span><strong>{transactions.length}</strong></div>
-            <div><span>Confirmed</span><strong>{confirmedTransactions.length}</strong></div>
+            <div><span>Failed</span><strong>{failedPayments}</strong></div>
+            <div><span>Expired</span><strong>{expiredPayments}</strong></div>
           </section>
           {paymentGrid(historyPayments)}
         </>}
