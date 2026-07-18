@@ -160,6 +160,8 @@ test('overdue requests expire and failed wallet transactions mark payments faile
     clientEmail: clientAuth.user.email, title: 'Expired milestone', amountBeam: 4, dueDate: '2020-01-01',
   });
   assert.equal(platform.paymentView(expired.id, freelancerAuth.user).status, 'expired');
+  assert.equal(platform.listNotifications(freelancerAuth.user).some((item) => item.title === 'Payment request expired'), true);
+  assert.equal(platform.listNotifications(clientAuth.user).some((item) => item.title === 'Payment request expired'), true);
 
   const store = new MemoryStore(emptyDatabase());
   const emailService = new MemoryEmailService();
