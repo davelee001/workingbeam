@@ -191,6 +191,13 @@ Failed wallet confirmations now mark the visible payment request as `failed` so 
 
 The UI now also surfaces due dates directly on request cards, gives failed/expired recovery hints, and summarizes failed/expired items in client history.
 
+Latest reliability and analytics update:
+
+- Payment requests now have visible `failed` and `expired` states instead of hiding those conditions inside transaction history.
+- Expired requests notify both freelancer and client when overdue pending/approved work is detected.
+- The dashboard now separates revenue, active contracts, pending spend/pipeline, and attention-needed counts.
+- Notification cards show intended delivery channels, including in-app, email, SMS, and push where configured by the event.
+
 ## Beam Integration
 
 The production adapter follows the official [Beam Wallet Protocol API](https://www.beam.mw/docs/core-tech/beam-wallet-protocol-api), which exposes JSON-RPC 2.0 methods such as `validate_address`, `tx_send`, `tx_status`, and `wallet_status`. WorkingBeam uses HTTP mode at the configured wallet endpoint. Browser-provided Beam strings are never accepted by length alone: live mode asks the wallet to validate their curve data and remaining payment-token capacity.
