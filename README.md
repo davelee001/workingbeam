@@ -48,7 +48,8 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Password hashing with a unique salt and Node.js `scrypt`
 - Random bearer sessions stored as SHA-256 hashes with expiration
 - Role and resource-level authorization
-- Payment request creation for an existing client account
+- Payment request creation for an existing client account with USD, EUR, GBP, SSP, UGX, KSH, TSH, and SDG request currencies
+- Generated payment links and QR codes for sharing requests with clients
 - Client approval and escrow funding
 - Beam Wallet API adapter using JSON-RPC 2.0 over HTTP
 - Server-side Beam address and payment-token validation through `validate_address` before account activation and transfers
@@ -56,6 +57,7 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Transaction submission and explicit confirmation refresh
 - Freelancer delivery notes
 - Client escrow release to the freelancer wallet
+- Downloadable text receipts for paid requests
 - Dispute opening by either party while funds are held
 - In-app notification outbox with email, SMS, and push channel intent
 - Public website with Landing, About, Features, Pricing, Documentation, and Contact pages
@@ -98,6 +100,8 @@ The Payments screen provides the full escrow workspace:
 - Filters for `all`, `active`, `escrow`, `completed`, and `disputed`
 - Full request history instead of the Overview subset
 - Counterparty, amount, delivery note, transaction ID, and timeline details
+- Generated payment link and QR code on every request card
+- Download receipt action after a request reaches paid/released status
 - Role-aware actions with server-side authorization and state validation
 
 ### Wallet
@@ -421,4 +425,4 @@ MIT
 
 **Status:** Working local MVP with role-based screens, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
 
-**Last updated:** 2026-07-17
+**Last updated:** 2026-07-18
