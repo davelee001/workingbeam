@@ -40,3 +40,19 @@ test('push webhook delivers notification payload with bearer token', async (cont
   assert.equal(delivered.init.headers.authorization, 'Bearer push-secret');
   assert.equal(JSON.parse(delivered.init.body).title, 'Payment received');
 });
+
+test('push webhook reports delivery failures', async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async () => new Response('nope', { status: 502 });
+  const push = new WebhookPushService('https://push.example.com/events');
+  await assert.rejects(() => push.send({
+    id: 'notice-2',
+    userId: 'user-2',
+    title: 'Payment failed',
+    message: 'Retry required.',
+    channels: ['push'],
+    read: false,
+    createdAt: '2026-07-18T00:00:00.000Z',
+  }), /HTTP 502/);
+});
