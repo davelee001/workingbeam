@@ -78,6 +78,11 @@ function qrCodeUrl(link: string): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=156x156&margin=10&data=${encodeURIComponent(link)}`;
 }
 
+function notificationChannelLabel(channel: 'in_app' | 'email' | 'sms' | 'push'): string {
+  if (channel === 'in_app') return 'in app';
+  return channel;
+}
+
 function downloadReceipt(payment: PaymentRequest): void {
   const releasedTransaction = payment.transactions.find((transaction) => transaction.kind === 'release' && transaction.status === 'confirmed');
   const receipt = [
@@ -431,7 +436,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
         </nav>
         <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setScreen('profile')}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
       </header>
-      {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><div className="notice-channels">{(item.channels ?? ['in_app']).map((channel) => <span key={channel}>{channel.replace('_', ' ')}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
+      {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><div className="notice-channels">{(item.channels ?? ['in_app']).map((channel) => <span key={channel}>{notificationChannelLabel(channel)}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
         {error && <div className="error-banner dashboard-error">{error}</div>}
 
