@@ -8,6 +8,8 @@ export type PaymentStatus =
   | 'release_pending'
   | 'released'
   | 'disputed'
+  | 'failed'
+  | 'expired'
   | 'cancelled';
 export type TransactionKind = 'funding' | 'release' | 'refund' | 'send';
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';

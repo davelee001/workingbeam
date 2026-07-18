@@ -413,6 +413,7 @@ export class PlatformService {
   }
 
   listPaymentRequests(actor: PublicUser): PaymentView[] {
+    this.expireOverdueRequests(actor.id);
     const database = this.store.read();
     return database.paymentRequests
       .filter((request) => request.freelancerId === actor.id || request.clientId === actor.id)
@@ -421,6 +422,7 @@ export class PlatformService {
   }
 
   paymentView(id: string, actor: PublicUser): PaymentView {
+    this.expireOverdueRequests(actor.id);
     const database = this.store.read();
     const request = database.paymentRequests.find((item) => item.id === id);
     if (!request) throw new PlatformError('Payment request not found', 404);
@@ -438,6 +440,23 @@ export class PlatformService {
       client: toPublicUser(client),
       transactions: database.transactions.filter((transaction) => transaction.paymentRequestId === request.id),
     };
+  }
+
+  private expireOverdueRequests(actorId?: string): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.store.mutate((database) => {
+      for (const request of database.paymentRequests) {
+        if (!request.dueDate || !['pending', 'approved'].includes(request.status)) continue;
+        const due = new Date(`${request.dueDate}T00:00:00`);
+        if (Number.isNaN(due.getTime()) || due >= today) continue;
+        request.status = 'expired';
+        request.updatedAt = now();
+        database.notifications.push(this.notification(request.freelancerId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
+        database.notifications.push(this.notification(request.clientId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
+        database.auditEvents.push(this.audit(actorId, 'payment.expire', 'payment_request', request.id));
+      }
+    });
   }
 
   approvePayment(actor: PublicUser, id: string): PaymentView {
@@ -560,8 +579,10 @@ export class PlatformService {
         const recipientId = transaction.kind === 'funding' ? request.freelancerId : request.freelancerId;
         draft.notifications.push(this.notification(recipientId, 'Transaction confirmed', `${transaction.amountBeam} BEAM ${transaction.kind} confirmed on Beam.`));
       } else if (status.status === 'failed') {
-        request.status = transaction.kind === 'funding' ? 'approved' : 'work_submitted';
+        request.status = 'failed';
         request.updatedAt = now();
+        const recipientId = transaction.kind === 'funding' ? request.clientId : request.freelancerId;
+        draft.notifications.push(this.notification(recipientId, 'Transaction failed', `${transaction.amountBeam} BEAM ${transaction.kind} failed on Beam. Review the request and try again.`, ['in_app', 'email', 'push']));
       }
       draft.auditEvents.push(this.audit(actor.id, 'transaction.refresh', 'transaction', transactionId, { status: status.status }));
     });
