@@ -105,6 +105,13 @@ The Payments screen provides the full escrow workspace:
 - Download receipt action after a request reaches paid/released status
 - Role-aware actions with server-side authorization and state validation
 
+Latest payment-sharing update:
+
+- New requests default to `USD` when a freelancer does not choose a currency.
+- Payment links open the authenticated payment workspace and route signed-in users to the Payments screen.
+- QR codes are shown beside generated payment links and collapse neatly on mobile screens.
+- Paid/released receipts include request title, amount, currency, parties, created date, due date when available, transaction reference, and payment link.
+
 ### Wallet
 
 The Wallet screen presents the Beam-facing view:
