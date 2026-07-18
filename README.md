@@ -98,6 +98,7 @@ The Payments screen provides the full escrow workspace:
 
 - Counts for all, active, escrowed, completed, and disputed requests
 - Filters for `all`, `active`, `escrow`, `completed`, and `disputed`
+- Request currency selector supports `USD`, `EUR`, `GBP`, `SSP`, `UGX`, `KSH`, `TSH`, and `SDG`
 - Full request history instead of the Overview subset
 - Counterparty, amount, delivery note, transaction ID, and timeline details
 - Generated payment link and QR code on every request card
