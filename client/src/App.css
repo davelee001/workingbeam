@@ -133,6 +133,8 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .amount strong { font:700 23px 'Manrope'; }
 .amount span { color:#84928c; font-size:9px; font-weight:700; letter-spacing:1px; }
 .description { color:var(--muted); font-size:13px; line-height:1.5; min-height:38px; }
+.due-date { margin:-28px 0 13px; color:#7d8d85; font-size:11px; font-weight:700; }
+.due-date.overdue { color:#a23e44; }
 .counterparty { display:flex; align-items:center; gap:9px; padding:13px 0; border-top:1px solid var(--line); }
 .counterparty>div:last-child { display:grid; font-size:12px; }
 .counterparty small { color:var(--muted); }

@@ -249,6 +249,7 @@ function PaymentCard({ payment, user, onAction }: {
         <div className="amount"><strong>{payment.amountBeam.toLocaleString()}</strong><span>{paymentCurrency(payment)}</span></div>
       </div>
       <p className="description">{payment.description || 'No additional description.'}</p>
+      {payment.dueDate && <p className={payment.status === 'expired' ? 'due-date overdue' : 'due-date'}>Due {new Date(`${payment.dueDate}T00:00:00`).toLocaleDateString()}</p>}
       <div className="counterparty"><div className="avatar">{(user.role === 'client' ? payment.freelancer.name : payment.client.name).slice(0, 1)}</div><div><small>{user.role === 'client' ? 'Freelancer' : 'Client'}</small><strong>{user.role === 'client' ? payment.freelancer.name : payment.client.name}</strong></div></div>
       <div className="payment-share">
         <div>
