@@ -301,6 +301,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [walletMode, setWalletMode] = useState('checking');
   const [emailMode, setEmailMode] = useState('checking');
   const [emailAvailable, setEmailAvailable] = useState(false);
+  const [pushMode, setPushMode] = useState('disabled');
+  const [pushAvailable, setPushAvailable] = useState(false);
   const [screen, setScreen] = useState<DashboardScreen>(initialScreen);
   const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
@@ -313,9 +315,9 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       const [paymentData, notificationData, health] = await Promise.all([
         request<{ paymentRequests: PaymentRequest[] }>('/api/payment-requests', token),
         request<{ notifications: AppNotification[] }>('/api/notifications', token),
-        request<{ wallet: { mode: string }; email: { mode: string; available: boolean } }>('/api/health'),
+        request<{ wallet: { mode: string }; email: { mode: string; available: boolean }; push?: { mode: string; available: boolean } }>('/api/health'),
       ]);
-      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available);
+      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available));
       const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
       setWalletTransactions(walletData.transactions);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
@@ -546,7 +548,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className="settings-grid">
             <article><small>Authentication</small><strong>{currentUser.emailVerified ? 'Email verified' : 'Verification paused'}</strong><span>Sessions use hashed bearer tokens and server-side ownership checks.</span></article>
             <article><small>Email</small><strong>{emailAvailable ? emailMode : 'Needs setup'}</strong><span>{emailMode === 'smtp' ? 'Production SMTP health is checked by the API.' : 'Console/memory email is development-only; configure SMTP for production.'}</span></article>
-            <article><small>Push notifications</small><strong>Channel ready</strong><span>Payment events include push channel intent; connect a push provider for device delivery.</span></article>
+            <article><small>Push notifications</small><strong>{pushAvailable ? pushMode : 'Needs setup'}</strong><span>{pushMode === 'webhook' ? 'Push webhook provider is configured.' : 'Payment events include push intent; configure a provider for device delivery.'}</span></article>
             <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
             <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development.' : 'Live Beam Wallet API is connected.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
