@@ -397,6 +397,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const activePayments = payments.filter((item) => ['approved','funding_pending','funded','work_submitted','release_pending','disputed'].includes(item.status));
   const activeContracts = new Set(activePayments.map((item) => currentUser.role === 'client' ? item.freelancerId : item.clientId)).size;
   const pendingSpend = payments.filter((item) => ['pending','approved','funding_pending'].includes(item.status)).reduce((sum, item) => sum + item.amountBeam, 0);
+  const analyticsLabel = currentUser.role === 'client' ? 'Spending analytics' : 'Pipeline analytics';
+  const analyticsHint = currentUser.role === 'client' ? 'Pending approval/funding' : 'Pending client movement';
   const failedPayments = payments.filter((item) => item.status === 'failed').length;
   const expiredPayments = payments.filter((item) => item.status === 'expired').length;
   const unread = notifications.filter((item) => !item.read).length;
@@ -451,7 +453,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           <section className="analytics-strip">
             <div><small>Monthly revenue</small><strong>{monthlyRevenue.toLocaleString()} <em>BEAM</em></strong><span>Paid this month</span></div>
             <div><small>Active contracts</small><strong>{activeContracts}</strong><span>Counterparties with live work</span></div>
-            <div><small>{currentUser.role === 'client' ? 'Spending analytics' : 'Pipeline analytics'}</small><strong>{pendingSpend.toLocaleString()} <em>BEAM</em></strong><span>{currentUser.role === 'client' ? 'Pending approval/funding' : 'Pending client movement'}</span></div>
+            <div><small>{analyticsLabel}</small><strong>{pendingSpend.toLocaleString()} <em>BEAM</em></strong><span>{analyticsHint}</span></div>
             <div><small>Attention needed</small><strong>{failedPayments + expiredPayments}</strong><span>{failedPayments} failed · {expiredPayments} expired</span></div>
           </section>
           <section className="section-heading"><div><h2>Payment activity</h2><p>Follow each request from approval to blockchain confirmation.</p></div><div className="heading-actions"><button className="secondary" onClick={() => void load()}>Refresh</button>{payments.length > 2 && <button className="secondary" onClick={() => setScreen('payments')}>View all</button>}</div></section>
