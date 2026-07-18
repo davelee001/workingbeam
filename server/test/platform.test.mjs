@@ -103,12 +103,19 @@ test('duplicate accounts and invalid credentials are rejected', async () => {
 test('freelancer creates a request and client receives a notification', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   const payment = platform.createPaymentRequest(freelancerAuth.user, {
-    clientEmail: clientAuth.user.email, title: 'Brand identity', description: 'Final identity package', amountBeam: 12.5,
+    clientEmail: clientAuth.user.email, title: 'Brand identity', description: 'Final identity package', amountBeam: 12.5, currency: 'UGX',
   });
   assert.equal(payment.status, 'pending');
   assert.equal(payment.amountBeam, 12.5);
+  assert.equal(payment.currency, 'UGX');
   assert.equal(platform.listPaymentRequests(clientAuth.user).length, 1);
-  assert.match(platform.listNotifications(clientAuth.user)[0].message, /12.5 BEAM/);
+  assert.match(platform.listNotifications(clientAuth.user)[0].message, /12.5 UGX/);
+  assert.throws(
+    () => platform.createPaymentRequest(freelancerAuth.user, {
+      clientEmail: clientAuth.user.email, title: 'Unsupported currency', amountBeam: 12.5, currency: 'BEAM',
+    }),
+    /supported payment currency/,
+  );
 });
 
 test('payment follows approval, escrow, delivery, release, and confirmation lifecycle', async () => {

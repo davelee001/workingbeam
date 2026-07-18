@@ -6,6 +6,7 @@ import {
   ContactInquiry,
   Notification,
   NotificationChannel,
+  PaymentCurrency,
   PaymentRequest,
   PublicUser,
   Session,
@@ -92,6 +93,7 @@ function validateRegistration(input: {
 }
 
 const contactSubjects = new Set(['product', 'integration', 'security', 'partnership']);
+const supportedPaymentCurrencies = new Set<PaymentCurrency>(['USD', 'EUR', 'GBP', 'SSP', 'UGX', 'KSH', 'TSH', 'SDG']);
 
 function validateContactInquiry(input: {
   name?: string; email?: string; company?: string; subject?: string; message?: string;
@@ -380,7 +382,7 @@ export class PlatformService {
   }
 
   createPaymentRequest(actor: PublicUser, input: {
-    clientEmail?: string; title?: string; description?: string; amountBeam?: number; dueDate?: string;
+    clientEmail?: string; title?: string; description?: string; amountBeam?: number; currency?: PaymentCurrency; dueDate?: string;
   }): PaymentView {
     if (actor.role !== 'freelancer') throw new PlatformError('Only freelancers can create payment requests', 403);
     const clientEmail = normalizeEmail(input.clientEmail ?? '');
@@ -389,19 +391,21 @@ export class PlatformService {
     if (!client) throw new PlatformError('No client account exists with that email', 404);
     if (!input.title?.trim() || input.title.trim().length < 3) throw new PlatformError('Title must contain at least 3 characters');
     if (!Number.isFinite(input.amountBeam) || (input.amountBeam ?? 0) <= 0 || (input.amountBeam ?? 0) > 1_000_000) {
-      throw new PlatformError('Amount must be between 0 and 1,000,000 BEAM');
+      throw new PlatformError('Amount must be between 0 and 1,000,000');
     }
+    const currency = input.currency ?? 'USD';
+    if (!supportedPaymentCurrencies.has(currency)) throw new PlatformError('Choose a supported payment currency');
     const timestamp = now();
     const request: PaymentRequest = {
       id: randomUUID(), freelancerId: actor.id, clientId: client.id,
       title: input.title.trim(), description: input.description?.trim() ?? '',
-      amountBeam: Number((input.amountBeam as number).toFixed(8)), status: 'pending',
+      amountBeam: Number((input.amountBeam as number).toFixed(8)), currency, status: 'pending',
       dueDate: input.dueDate || undefined, createdAt: timestamp, updatedAt: timestamp,
     };
     this.store.mutate((draft) => {
       draft.paymentRequests.push(request);
       draft.notifications.push(this.notification(
-        client.id, 'New payment request', `${actor.name} requested ${request.amountBeam} BEAM for ${request.title}.`,
+        client.id, 'New payment request', `${actor.name} requested ${request.amountBeam} ${request.currency} for ${request.title}.`,
       ));
       draft.auditEvents.push(this.audit(actor.id, 'payment.create', 'payment_request', request.id));
     });

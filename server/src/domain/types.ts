@@ -12,6 +12,7 @@ export type PaymentStatus =
 export type TransactionKind = 'funding' | 'release' | 'refund' | 'send';
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';
 export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'push';
+export type PaymentCurrency = 'USD' | 'EUR' | 'GBP' | 'SSP' | 'UGX' | 'KSH' | 'TSH' | 'SDG';
 
 export interface User {
   id: string;
@@ -59,6 +60,7 @@ export interface PaymentRequest {
   title: string;
   description: string;
   amountBeam: number;
+  currency: PaymentCurrency;
   status: PaymentStatus;
   dueDate?: string;
   workNote?: string;
