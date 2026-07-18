@@ -189,6 +189,8 @@ pending
 
 Failed wallet confirmations now mark the visible payment request as `failed` so either party can spot the issue from Payments, Outstanding Requests, History, and notifications. Pending or approved requests whose due date has passed are automatically marked `expired` when payment data is loaded.
 
+The UI now also surfaces due dates directly on request cards, gives failed/expired recovery hints, and summarizes failed/expired items in client history.
+
 ## Beam Integration
 
 The production adapter follows the official [Beam Wallet Protocol API](https://www.beam.mw/docs/core-tech/beam-wallet-protocol-api), which exposes JSON-RPC 2.0 methods such as `validate_address`, `tx_send`, `tx_status`, and `wallet_status`. WorkingBeam uses HTTP mode at the configured wallet endpoint. Browser-provided Beam strings are never accepted by length alone: live mode asks the wallet to validate their curve data and remaining payment-token capacity.
