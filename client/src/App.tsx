@@ -263,6 +263,8 @@ function PaymentCard({ payment, user, onAction }: {
       </div>
       {payment.workNote && <div className="detail-note"><strong>Delivery</strong><p>{payment.workNote}</p></div>}
       {payment.disputeReason && <div className="detail-note danger"><strong>Dispute</strong><p>{payment.disputeReason}</p></div>}
+      {payment.status === 'failed' && <div className="detail-note danger"><strong>Payment failed</strong><p>Review the wallet transaction and create or fund a replacement request when ready.</p></div>}
+      {payment.status === 'expired' && <div className="detail-note"><strong>Request expired</strong><p>This request passed its due date before approval or funding.</p></div>}
       <div className="timeline">
         <span className="done">Requested</span><span className={payment.status !== 'pending' ? 'done' : ''}>Approved</span><span className={['funded','work_submitted','release_pending','released'].includes(payment.status) ? 'done' : ''}>Funded</span><span className={['work_submitted','release_pending','released'].includes(payment.status) ? 'done' : ''}>Delivered</span><span className={payment.status === 'released' ? 'done' : ''}>Paid</span>
       </div>
