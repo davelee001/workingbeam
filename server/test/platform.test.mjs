@@ -139,6 +139,21 @@ test('fraud rules block high-risk payment requests before creation', async () =>
   assert.equal(store.read().auditEvents.some((event) => event.action === 'fraud.payment_request_blocked'), true);
 });
 
+test('fraud rules block excessive same-day request velocity', async () => {
+  const { platform, freelancerAuth, clientAuth } = await fixture();
+  for (let index = 0; index < 25; index += 1) {
+    platform.createPaymentRequest(freelancerAuth.user, {
+      clientEmail: clientAuth.user.email, title: `Velocity ${index}`, amountBeam: 1,
+    });
+  }
+  assert.throws(
+    () => platform.createPaymentRequest(freelancerAuth.user, {
+      clientEmail: clientAuth.user.email, title: 'Too many requests', amountBeam: 1,
+    }),
+    /manual review/,
+  );
+});
+
 test('payment follows approval, escrow, delivery, release, and confirmation lifecycle', async () => {
   const { platform, freelancerAuth, clientAuth } = await fixture();
   let payment = platform.createPaymentRequest(freelancerAuth.user, {
