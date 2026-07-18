@@ -6,6 +6,12 @@ import { MockBeamWallet } from '../dist/services/beamWallet.js';
 import { MemoryEmailService } from '../dist/services/emailService.js';
 import { PlatformService } from '../dist/services/platformService.js';
 
+class FailingBeamWallet extends MockBeamWallet {
+  async transactionStatus() {
+    return { status: 'failed', rawStatus: 'mock-failed' };
+  }
+}
+
 async function registerVerified(platform, emailService, registration) {
   const pending = await platform.register(registration);
   assert.equal(pending.requiresVerification, true);
@@ -146,6 +152,34 @@ test('payment follows approval, escrow, delivery, release, and confirmation life
   payment = await platform.refreshTransaction(freelancerAuth.user, release.id);
   assert.equal(payment.status, 'released');
   assert.equal(payment.transactions.find((transaction) => transaction.kind === 'release').status, 'confirmed');
+});
+
+test('overdue requests expire and failed wallet transactions mark payments failed', async () => {
+  const { platform, freelancerAuth, clientAuth } = await fixture();
+  const expired = platform.createPaymentRequest(freelancerAuth.user, {
+    clientEmail: clientAuth.user.email, title: 'Expired milestone', amountBeam: 4, dueDate: '2020-01-01',
+  });
+  assert.equal(platform.paymentView(expired.id, freelancerAuth.user).status, 'expired');
+
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const failingPlatform = new PlatformService(store, new FailingBeamWallet(), 'mock-escrow-wallet', emailService);
+  const freelancer = await registerVerified(failingPlatform, emailService, {
+    name: 'Fail Freelancer', email: 'fail-freelancer@example.com', password: 'secure-pass-5',
+    role: 'freelancer', walletAddress: 'beam-fail-freelancer-wallet',
+  });
+  const client = await registerVerified(failingPlatform, emailService, {
+    name: 'Fail Client', email: 'fail-client@example.com', password: 'secure-pass-6',
+    role: 'client', walletAddress: 'beam-fail-client-wallet',
+  });
+  let payment = failingPlatform.createPaymentRequest(freelancer.user, {
+    clientEmail: client.user.email, title: 'Failed funding', amountBeam: 7,
+  });
+  payment = failingPlatform.approvePayment(client.user, payment.id);
+  payment = await failingPlatform.fundEscrow(client.user, payment.id);
+  payment = await failingPlatform.refreshTransaction(client.user, payment.transactions[0].id);
+  assert.equal(payment.status, 'failed');
+  assert.equal(failingPlatform.listNotifications(client.user).some((item) => item.title === 'Transaction failed'), true);
 });
 
 test('role and ownership rules prevent unauthorized state changes', async () => {
