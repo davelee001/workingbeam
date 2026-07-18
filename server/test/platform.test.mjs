@@ -110,6 +110,10 @@ test('freelancer creates a request and client receives a notification', async ()
   assert.equal(payment.currency, 'UGX');
   assert.equal(platform.listPaymentRequests(clientAuth.user).length, 1);
   assert.match(platform.listNotifications(clientAuth.user)[0].message, /12.5 UGX/);
+  const defaultCurrencyPayment = platform.createPaymentRequest(freelancerAuth.user, {
+    clientEmail: clientAuth.user.email, title: 'Default currency', amountBeam: 20,
+  });
+  assert.equal(defaultCurrencyPayment.currency, 'USD');
   assert.throws(
     () => platform.createPaymentRequest(freelancerAuth.user, {
       clientEmail: clientAuth.user.email, title: 'Unsupported currency', amountBeam: 12.5, currency: 'BEAM',
