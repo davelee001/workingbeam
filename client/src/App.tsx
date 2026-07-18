@@ -254,7 +254,7 @@ function PaymentCard({ payment, user, onAction }: {
           <small>Generated payment link</small>
           <code>{link}</code>
           <div className="share-actions">
-            <button className="secondary" onClick={() => void navigator.clipboard?.writeText(link)}>Copy link</button>
+            <button className="secondary" aria-label={`Copy payment link for ${payment.title}`} onClick={() => void navigator.clipboard?.writeText(link)}>Copy link</button>
             <a className="secondary link-button" href={link}>Open</a>
           </div>
         </div>
