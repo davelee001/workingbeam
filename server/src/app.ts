@@ -36,6 +36,12 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
   const app = express();
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY === 'true');
+  app.use((req, res, next) => {
+    if (process.env.FORCE_HTTPS === 'true' && req.header('x-forwarded-proto') !== 'https' && !req.secure) {
+      res.status(426).json({ error: 'HTTPS is required' }); return;
+    }
+    next();
+  });
   app.use(cors({ origin: process.env.CLIENT_ORIGIN?.split(',') ?? true }));
   app.use(express.json({ limit: '64kb' }));
   app.use(rateLimiter());
@@ -56,13 +62,13 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
   };
 
   app.get('/api/health', asyncRoute(async (_req, res) => {
-    const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email });
+    const [wallet, email, push] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
   }));
 
   app.get('/health', asyncRoute(async (_req, res) => {
-    const [wallet, email] = await Promise.all([platform.walletHealth(), platform.emailHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email });
+    const [wallet, email, push] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
   }));
 
   app.get('/api', (_req, res) => {

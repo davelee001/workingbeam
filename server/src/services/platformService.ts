@@ -17,12 +17,16 @@ import {
 import { DataStore } from '../persistence/jsonStore.js';
 import { BeamWallet } from './beamWallet.js';
 import { EmailService } from './emailService.js';
+import { DisabledPushService, PushService } from './pushService.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_HOURS = 24;
 const VERIFICATION_MINUTES = 10;
 const VERIFICATION_MAX_ATTEMPTS = 5;
 const VERIFICATION_RESEND_SECONDS = 60;
+const MAX_PAYMENT_AMOUNT = 1_000_000;
+const HIGH_RISK_PAYMENT_AMOUNT = 100_000;
+const DAILY_REQUEST_LIMIT = 25;
 
 export class PlatformError extends Error {
   constructor(message: string, readonly statusCode = 400, readonly code?: string) {
@@ -113,6 +117,7 @@ export class PlatformService {
     private readonly emailService: EmailService,
     private readonly verificationCodePepper = 'workingbeam-development-verification-pepper',
     private readonly requireEmailVerification = true,
+    private readonly pushService: PushService = new DisabledPushService(),
   ) {}
 
   private createSession(userId: string): { session: Session; token: string } {
@@ -137,6 +142,15 @@ export class PlatformService {
     channels: NotificationChannel[] = ['in_app', 'email'],
   ): Notification {
     return { id: randomUUID(), userId, title, message, channels, read: false, createdAt: now() };
+  }
+
+  private queueNotification(database: ReturnType<DataStore['read']>, notification: Notification): void {
+    database.notifications.push(notification);
+    if (notification.channels.includes('push')) {
+      void this.pushService.send(notification).catch((error) => {
+        console.error('Push notification delivery failed', error);
+      });
+    }
   }
 
   async register(input: {
@@ -375,7 +389,7 @@ export class PlatformService {
         createdAt: now(),
       };
       database.transactions.push(transaction);
-      database.notifications.push(this.notification(actor.id, 'Payment sent', `${amountBeam} BEAM was submitted to the Beam wallet.`));
+      this.queueNotification(database, this.notification(actor.id, 'Payment sent', `${amountBeam} BEAM was submitted to the Beam wallet.`, ['in_app', 'email', 'push']));
       database.auditEvents.push(this.audit(actor.id, 'wallet.send', 'transaction', transaction.id, { walletTransactionId }));
     });
     return { transaction: transaction as BeamTransaction };
@@ -390,9 +404,10 @@ export class PlatformService {
     const client = database.users.find((user) => user.email === clientEmail && user.role === 'client');
     if (!client) throw new PlatformError('No client account exists with that email', 404);
     if (!input.title?.trim() || input.title.trim().length < 3) throw new PlatformError('Title must contain at least 3 characters');
-    if (!Number.isFinite(input.amountBeam) || (input.amountBeam ?? 0) <= 0 || (input.amountBeam ?? 0) > 1_000_000) {
+    if (!Number.isFinite(input.amountBeam) || (input.amountBeam ?? 0) <= 0 || (input.amountBeam ?? 0) > MAX_PAYMENT_AMOUNT) {
       throw new PlatformError('Amount must be between 0 and 1,000,000');
     }
+    this.assertPaymentRiskAccepted(actor, input.amountBeam as number);
     const currency = input.currency ?? 'USD';
     if (!supportedPaymentCurrencies.has(currency)) throw new PlatformError('Choose a supported payment currency');
     const timestamp = now();
@@ -404,12 +419,26 @@ export class PlatformService {
     };
     this.store.mutate((draft) => {
       draft.paymentRequests.push(request);
-      draft.notifications.push(this.notification(
+      this.queueNotification(draft, this.notification(
         client.id, 'New payment request', `${actor.name} requested ${request.amountBeam} ${request.currency} for ${request.title}.`,
       ));
       draft.auditEvents.push(this.audit(actor.id, 'payment.create', 'payment_request', request.id));
     });
     return this.paymentView(request.id, actor);
+  }
+
+  private assertPaymentRiskAccepted(actor: PublicUser, amount: number): void {
+    const today = now().slice(0, 10);
+    const database = this.store.read();
+    const createdToday = database.paymentRequests.filter((request) => request.freelancerId === actor.id && request.createdAt.slice(0, 10) === today).length;
+    const reasons: string[] = [];
+    if (amount >= HIGH_RISK_PAYMENT_AMOUNT) reasons.push('high_amount');
+    if (createdToday >= DAILY_REQUEST_LIMIT) reasons.push('daily_velocity');
+    if (reasons.length === 0) return;
+    this.store.mutate((draft) => {
+      draft.auditEvents.push(this.audit(actor.id, 'fraud.payment_request_blocked', 'user', actor.id, { amount, reasons, createdToday }));
+    });
+    throw new PlatformError('Payment request needs manual review before it can be created', 429, 'FRAUD_REVIEW_REQUIRED');
   }
 
   listPaymentRequests(actor: PublicUser): PaymentView[] {
@@ -452,8 +481,8 @@ export class PlatformService {
         if (Number.isNaN(due.getTime()) || due >= today) continue;
         request.status = 'expired';
         request.updatedAt = now();
-        database.notifications.push(this.notification(request.freelancerId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
-        database.notifications.push(this.notification(request.clientId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
+        this.queueNotification(database, this.notification(request.freelancerId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
+        this.queueNotification(database, this.notification(request.clientId, 'Payment request expired', `${request.title} expired because its due date passed.`, ['in_app', 'email', 'push']));
         database.auditEvents.push(this.audit(actorId, 'payment.expire', 'payment_request', request.id));
       }
     });
@@ -466,7 +495,7 @@ export class PlatformService {
     this.store.mutate((database) => {
       const request = database.paymentRequests.find((item) => item.id === id) as PaymentRequest;
       request.status = 'approved'; request.updatedAt = now();
-      database.notifications.push(this.notification(view.freelancerId, 'Request approved', `${actor.name} approved ${view.title}.`));
+      this.queueNotification(database, this.notification(view.freelancerId, 'Request approved', `${actor.name} approved ${view.title}.`));
       database.auditEvents.push(this.audit(actor.id, 'payment.approve', 'payment_request', id));
     });
     return this.paymentView(id, actor);
@@ -491,7 +520,7 @@ export class PlatformService {
         id: randomUUID(), paymentRequestId: id, walletTransactionId, kind: 'funding',
         amountBeam: view.amountBeam, fromUserId: actor.id, status: 'pending', createdAt: now(),
       });
-      database.notifications.push(this.notification(view.freelancerId, 'Escrow funding submitted', `${view.amountBeam} BEAM is awaiting blockchain confirmation.`));
+      this.queueNotification(database, this.notification(view.freelancerId, 'Escrow funding submitted', `${view.amountBeam} BEAM is awaiting blockchain confirmation.`));
       database.auditEvents.push(this.audit(actor.id, 'escrow.fund', 'payment_request', id, { walletTransactionId }));
     });
     return this.paymentView(id, actor);
@@ -505,7 +534,7 @@ export class PlatformService {
     this.store.mutate((database) => {
       const request = database.paymentRequests.find((item) => item.id === id) as PaymentRequest;
       request.status = 'work_submitted'; request.workNote = workNote.trim(); request.updatedAt = now();
-      database.notifications.push(this.notification(view.clientId, 'Work submitted', `${actor.name} submitted work for ${view.title}.`));
+      this.queueNotification(database, this.notification(view.clientId, 'Work submitted', `${actor.name} submitted work for ${view.title}.`));
       database.auditEvents.push(this.audit(actor.id, 'work.submit', 'payment_request', id));
     });
     return this.paymentView(id, actor);
@@ -528,7 +557,7 @@ export class PlatformService {
         id: randomUUID(), paymentRequestId: id, walletTransactionId, kind: 'release',
         amountBeam: view.amountBeam, toUserId: view.freelancerId, status: 'pending', createdAt: now(),
       });
-      database.notifications.push(this.notification(view.freelancerId, 'Payment release submitted', `${view.amountBeam} BEAM is awaiting blockchain confirmation.`));
+      this.queueNotification(database, this.notification(view.freelancerId, 'Payment release submitted', `${view.amountBeam} BEAM is awaiting blockchain confirmation.`));
       database.auditEvents.push(this.audit(actor.id, 'escrow.release', 'payment_request', id, { walletTransactionId }));
     });
     return this.paymentView(id, actor);
@@ -542,7 +571,7 @@ export class PlatformService {
     this.store.mutate((database) => {
       const request = database.paymentRequests.find((item) => item.id === id) as PaymentRequest;
       request.status = 'disputed'; request.disputeReason = reason.trim(); request.updatedAt = now();
-      database.notifications.push(this.notification(otherUserId, 'Payment disputed', `${actor.name} opened a dispute for ${view.title}.`, ['in_app', 'email', 'sms']));
+      this.queueNotification(database, this.notification(otherUserId, 'Payment disputed', `${actor.name} opened a dispute for ${view.title}.`, ['in_app', 'email', 'sms']));
       database.auditEvents.push(this.audit(actor.id, 'escrow.dispute', 'payment_request', id));
     });
     return this.paymentView(id, actor);
@@ -577,12 +606,12 @@ export class PlatformService {
         request.status = transaction.kind === 'funding' ? 'funded' : transaction.kind === 'release' ? 'released' : request.status;
         request.updatedAt = now();
         const recipientId = transaction.kind === 'funding' ? request.freelancerId : request.freelancerId;
-        draft.notifications.push(this.notification(recipientId, 'Transaction confirmed', `${transaction.amountBeam} BEAM ${transaction.kind} confirmed on Beam.`));
+        this.queueNotification(draft, this.notification(recipientId, 'Transaction confirmed', `${transaction.amountBeam} BEAM ${transaction.kind} confirmed on Beam.`));
       } else if (status.status === 'failed') {
         request.status = 'failed';
         request.updatedAt = now();
         const recipientId = transaction.kind === 'funding' ? request.clientId : request.freelancerId;
-        draft.notifications.push(this.notification(recipientId, 'Transaction failed', `${transaction.amountBeam} BEAM ${transaction.kind} failed on Beam. Review the request and try again.`, ['in_app', 'email', 'push']));
+        this.queueNotification(draft, this.notification(recipientId, 'Transaction failed', `${transaction.amountBeam} BEAM ${transaction.kind} failed on Beam. Review the request and try again.`, ['in_app', 'email', 'push']));
       }
       draft.auditEvents.push(this.audit(actor.id, 'transaction.refresh', 'transaction', transactionId, { status: status.status }));
     });
@@ -646,5 +675,9 @@ export class PlatformService {
 
   emailHealth() {
     return this.emailService.health();
+  }
+
+  pushHealth() {
+    return this.pushService.health();
   }
 }
