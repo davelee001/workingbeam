@@ -35,6 +35,7 @@ interface PaymentRequest {
   amountBeam: number;
   currency: PaymentCurrency;
   status: PaymentStatus;
+  dueDate?: string;
   workNote?: string;
   disputeReason?: string;
   freelancer: User;
@@ -88,6 +89,7 @@ function downloadReceipt(payment: PaymentRequest): void {
     `Freelancer: ${payment.freelancer.name} <${payment.freelancer.email}>`,
     `Client: ${payment.client.name} <${payment.client.email}>`,
     `Created: ${new Date(payment.createdAt).toLocaleString()}`,
+    payment.dueDate ? `Due date: ${payment.dueDate}` : 'Due date: Not set',
     releasedTransaction ? `Transaction ID: ${releasedTransaction.walletTransactionId}` : 'Transaction ID: Not confirmed yet',
     `Payment link: ${paymentLink(payment)}`,
     '',
