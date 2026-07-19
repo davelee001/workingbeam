@@ -73,6 +73,7 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Push token registration endpoint for provider-specific browser/device tokens
 - SMS webhook delivery adapter for notification events with `sms` channel intent
 - Compliance review request state for custody/legal/KYC readiness tracking
+- KYC submission workflow with legal name, country, document type, last-four document storage, address, status, and review history
 - Responsive freelancer/client workspace with dedicated Overview, Payments, and Wallet screens
 
 ## Product Screens
@@ -235,6 +236,7 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **Push:** payment events include push channel intent and users can register provider-specific device tokens
 - **SMS:** SMS-channel notifications can be delivered through a configured HTTPS webhook provider
 - **Compliance:** users can request compliance review; real custody/legal/KYC approval remains an external operational process
+- **KYC:** authenticated users can submit identity details from Profile; the app stores document last-four only and tracks review status
 - **HTTPS:** production startup requires explicit HTTPS enforcement so deployments do not accidentally serve the API over plain HTTP
 - **Fraud:** high-value and high-velocity payment request creation is blocked and audited for manual review
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
@@ -366,7 +368,7 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, encrypted wallet storage, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, push/SMS webhooks, compliance review requests, contact inquiry capture, bot honeypot handling, and audit events.
+The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, encrypted wallet storage, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, push/SMS webhooks, compliance review requests, KYC submissions, contact inquiry capture, bot honeypot handling, and audit events.
 
 Latest local security batch:
 
@@ -445,6 +447,8 @@ Latest local security batch:
 | `POST` | `/api/transactions/:id/refresh` | Refresh Beam confirmation |
 | `GET` | `/api/notifications` | Current user's notification outbox |
 | `POST` | `/api/notifications/:id/read` | Mark notification read |
+| `GET` | `/api/kyc` | List current user's KYC submissions |
+| `POST` | `/api/kyc` | Submit current user's KYC details for review |
 
 Send authenticated requests with:
 
