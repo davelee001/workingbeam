@@ -4,6 +4,7 @@ import {
   AuditEvent,
   BeamTransaction,
   ContactInquiry,
+  KycSubmission,
   Notification,
   NotificationChannel,
   PaymentCurrency,
@@ -40,6 +41,10 @@ export interface PaymentView extends PaymentRequest {
   freelancer: PublicUser;
   client: PublicUser;
   transactions: BeamTransaction[];
+}
+
+export interface KycView extends KycSubmission {
+  user: PublicUser;
 }
 
 export type RegistrationResult =
@@ -109,6 +114,17 @@ function validateContactInquiry(input: {
   if (input.company && input.company.trim().length > 120) throw new PlatformError('Company must be 120 characters or fewer');
   if (!input.subject || !contactSubjects.has(input.subject)) throw new PlatformError('Choose a valid contact topic');
   if (!input.message?.trim() || input.message.trim().length < 20 || input.message.trim().length > 2000) throw new PlatformError('Message must be between 20 and 2,000 characters');
+}
+
+function validateKycSubmission(input: {
+  legalName?: string; country?: string; documentType?: string; documentNumber?: string; address?: string;
+}): asserts input is { legalName: string; country: string; documentType: KycSubmission['documentType']; documentNumber: string; address: string } {
+  const documentTypes = new Set(['national_id', 'passport', 'drivers_license', 'business_registration']);
+  if (!input.legalName?.trim() || input.legalName.trim().length < 2 || input.legalName.trim().length > 120) throw new PlatformError('Legal name must be between 2 and 120 characters');
+  if (!input.country?.trim() || input.country.trim().length < 2 || input.country.trim().length > 80) throw new PlatformError('Country is required');
+  if (!input.documentType || !documentTypes.has(input.documentType)) throw new PlatformError('Choose a valid document type');
+  if (!input.documentNumber?.trim() || input.documentNumber.trim().length < 4 || input.documentNumber.trim().length > 80) throw new PlatformError('Document number must contain at least 4 characters');
+  if (!input.address?.trim() || input.address.trim().length < 8 || input.address.trim().length > 240) throw new PlatformError('Residential or business address must be between 8 and 240 characters');
 }
 
 export class PlatformService {
@@ -387,6 +403,48 @@ export class PlatformService {
       database.auditEvents.push(this.audit(actor.id, 'compliance.review_requested', 'user', actor.id));
     });
     return this.publicUser(updated as User);
+  }
+
+  submitKyc(actor: PublicUser, input: {
+    legalName?: string; country?: string; documentType?: string; documentNumber?: string; address?: string;
+  }): KycView {
+    validateKycSubmission(input);
+    const documentNumber = input.documentNumber.trim();
+    const submission: KycSubmission = {
+      id: randomUUID(),
+      userId: actor.id,
+      legalName: input.legalName.trim(),
+      country: input.country.trim(),
+      documentType: input.documentType,
+      documentLast4: documentNumber.slice(-4),
+      address: input.address.trim(),
+      status: 'pending_review',
+      submittedAt: now(),
+    };
+    let user: User | undefined;
+    this.store.mutate((database) => {
+      database.kycSubmissions = database.kycSubmissions.filter((item) => item.userId !== actor.id || item.status !== 'pending_review');
+      database.kycSubmissions.push(submission);
+      user = database.users.find((item) => item.id === actor.id) as User;
+      user.complianceStatus = 'pending_review';
+      database.auditEvents.push(this.audit(actor.id, 'kyc.submit', 'kyc_submission', submission.id, {
+        country: submission.country,
+        documentType: submission.documentType,
+      }));
+    });
+    return { ...submission, user: this.publicUser(user as User) };
+  }
+
+  listKycSubmissions(actor: PublicUser): KycView[] {
+    const database = this.store.read();
+    return database.kycSubmissions
+      .filter((item) => item.userId === actor.id)
+      .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+      .map((submission) => {
+        const user = database.users.find((item) => item.id === submission.userId);
+        if (!user) throw new PlatformError('KYC account is missing', 500);
+        return { ...submission, user: this.publicUser(user) };
+      });
   }
 
   async generateWallet(actor: PublicUser): Promise<{ user: PublicUser; address: string }> {
