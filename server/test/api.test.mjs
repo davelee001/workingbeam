@@ -22,6 +22,7 @@ test('health reports HTTPS enforcement and push status', async () => {
     assert.equal(payload.status, 'ok');
     assert.equal(payload.https.enforced, false);
     assert.equal(payload.push.mode, 'disabled');
+    assert.equal(payload.sms.mode, 'disabled');
   } finally {
     server.close();
   }
