@@ -247,6 +247,8 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .settings-grid strong { font:700 21px 'Manrope'; }
 .settings-grid span { color:#61746c; line-height:1.45; }
 .settings-grid code { overflow-wrap:anywhere; color:#0b6045; font-size:12px; }
+.inline-action { padding:0; color:#0b6045; background:transparent; border:0; font-size:12px; font-weight:700; text-align:left; }
+.inline-action:hover { color:var(--green); }
 .profile-layout { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr); gap:16px; align-items:start; }
 .profile-form,.profile-summary { padding:22px; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:0 12px 30px rgba(23,52,41,.055); }
 .profile-summary { display:grid; gap:10px; justify-items:start; color:#526960; }
