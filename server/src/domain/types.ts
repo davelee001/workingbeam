@@ -24,6 +24,8 @@ export interface User {
   role: UserRole;
   walletAddress: string;
   phone?: string;
+  pushTokens?: string[];
+  complianceStatus?: 'not_started' | 'pending_review' | 'approved' | 'rejected';
   emailVerifiedAt?: string;
   createdAt: string;
 }
@@ -35,6 +37,8 @@ export interface PublicUser {
   role: UserRole;
   walletAddress: string;
   phone?: string;
+  pushTokens?: string[];
+  complianceStatus?: 'not_started' | 'pending_review' | 'approved' | 'rejected';
   emailVerified: boolean;
   createdAt: string;
 }
@@ -146,6 +150,8 @@ export function toPublicUser(user: User): PublicUser {
     role: user.role,
     walletAddress: user.walletAddress,
     phone: user.phone,
+    pushTokens: user.pushTokens ?? [],
+    complianceStatus: user.complianceStatus ?? 'not_started',
     emailVerified: Boolean(user.emailVerifiedAt),
     createdAt: user.createdAt,
   };
