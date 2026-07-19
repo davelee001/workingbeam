@@ -85,6 +85,10 @@ function notificationChannelLabel(channel: 'in_app' | 'email' | 'sms' | 'push'):
   return channel;
 }
 
+function complianceLabel(status: User['complianceStatus']): string {
+  return (status ?? 'not_started').replace('_', ' ');
+}
+
 function downloadReceipt(payment: PaymentRequest): void {
   const releasedTransaction = payment.transactions.find((transaction) => transaction.kind === 'release' && transaction.status === 'confirmed');
   const receipt = [
@@ -612,7 +616,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <label>Beam wallet address or token<input required minLength={10} value={profileForm.walletAddress} onChange={(event) => setProfileForm({ ...profileForm, walletAddress: event.target.value })} /></label>
               {error && <div className="error-banner">{error}</div>}
               <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
-            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Compliance</small><strong>{currentUser.complianceStatus ?? 'not_started'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="secondary profile-edit-button" disabled={busy === 'compliance'} onClick={() => void requestComplianceReview()}>{busy === 'compliance' ? 'Requesting…' : 'Request compliance review'}</button><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
+            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Compliance</small><strong>{complianceLabel(currentUser.complianceStatus)}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="secondary profile-edit-button" disabled={busy === 'compliance'} onClick={() => void requestComplianceReview()}>{busy === 'compliance' ? 'Requesting…' : 'Request compliance review'}</button><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
             <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
           </section>
         </>}
