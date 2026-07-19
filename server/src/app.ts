@@ -62,13 +62,13 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
   };
 
   app.get('/api/health', asyncRoute(async (_req, res) => {
-    const [wallet, email, push] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
+    const [wallet, email, push, sms] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth(), platform.smsHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, sms, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
   }));
 
   app.get('/health', asyncRoute(async (_req, res) => {
-    const [wallet, email, push] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth()]);
-    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
+    const [wallet, email, push, sms] = await Promise.all([platform.walletHealth(), platform.emailHealth(), platform.pushHealth(), platform.smsHealth()]);
+    res.json({ status: 'ok', service: 'WorkingBeam API', database: { mode: persistenceMode }, wallet, email, push, sms, https: { enforced: process.env.FORCE_HTTPS === 'true' } });
   }));
 
   app.get('/api', (_req, res) => {
@@ -93,6 +93,8 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
         'GET /api/wallet/transactions',
         'POST /api/wallet/send',
         'GET /api/notifications',
+        'POST /api/notifications/push-token',
+        'POST /api/compliance/review',
       ],
     });
   });
@@ -189,6 +191,14 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
 
   app.post('/api/notifications/:id/read', authenticate, asyncRoute((req, res) => {
     res.json({ notification: platform.markNotificationRead(req.user as PublicUser, req.params.id) });
+  }));
+
+  app.post('/api/notifications/push-token', authenticate, asyncRoute((req, res) => {
+    res.json({ user: platform.registerPushToken(req.user as PublicUser, req.body ?? {}) });
+  }));
+
+  app.post('/api/compliance/review', authenticate, asyncRoute((req, res) => {
+    res.json({ user: platform.requestComplianceReview(req.user as PublicUser) });
   }));
 
   app.use((_req, res) => res.status(404).json({ error: 'Endpoint not found' }));
