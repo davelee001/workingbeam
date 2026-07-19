@@ -368,6 +368,13 @@ npm run build
 
 The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, encrypted wallet storage, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, push/SMS webhooks, compliance review requests, contact inquiry capture, bot honeypot handling, and audit events.
 
+Latest local security batch:
+
+- Wallet addresses/tokens can now be encrypted at rest with `WALLET_ENCRYPTION_KEY`.
+- SMS delivery has a webhook adapter and health reporting alongside email and push.
+- Provider-specific push tokens can be registered per user.
+- Users can request compliance review so custody/legal/KYC readiness is tracked in the product while external review remains operational.
+
 ### Current Verification
 
 - 19 security and platform tests passing
@@ -466,4 +473,4 @@ MIT
 
 **Status:** Working local MVP with role-based screens, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
 
-**Last updated:** 2026-07-18
+**Last updated:** 2026-07-19
