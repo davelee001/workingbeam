@@ -109,6 +109,20 @@ export interface AuditEvent {
   createdAt: string;
 }
 
+export interface KycSubmission {
+  id: string;
+  userId: string;
+  legalName: string;
+  country: string;
+  documentType: 'national_id' | 'passport' | 'drivers_license' | 'business_registration';
+  documentLast4: string;
+  address: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+  rejectionReason?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+}
+
 export interface ContactInquiry {
   id: string;
   name: string;
@@ -128,6 +142,7 @@ export interface Database {
   transactions: BeamTransaction[];
   notifications: Notification[];
   auditEvents: AuditEvent[];
+  kycSubmissions: KycSubmission[];
   contactInquiries: ContactInquiry[];
 }
 
@@ -139,6 +154,7 @@ export const emptyDatabase = (): Database => ({
   transactions: [],
   notifications: [],
   auditEvents: [],
+  kycSubmissions: [],
   contactInquiries: [],
 });
 
