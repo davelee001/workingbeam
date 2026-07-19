@@ -366,7 +366,7 @@ npm test --prefix server
 npm run build
 ```
 
-The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, contact inquiry capture, bot honeypot handling, and audit events.
+The test suite covers email-code hashing, expiry and lockout, unverified login blocking, Beam address-provider validation, encrypted wallet storage, password storage, duplicate accounts, request authorization, the complete escrow lifecycle, generated wallet/deposit addresses, standalone wallet sends, transaction confirmation, disputes, notification creation, push/SMS webhooks, compliance review requests, contact inquiry capture, bot honeypot handling, and audit events.
 
 ### Current Verification
 
