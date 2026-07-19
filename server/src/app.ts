@@ -95,6 +95,8 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
         'GET /api/notifications',
         'POST /api/notifications/push-token',
         'POST /api/compliance/review',
+        'GET /api/kyc',
+        'POST /api/kyc',
       ],
     });
   });
@@ -199,6 +201,14 @@ export function createApp(platform: PlatformService, persistenceMode = 'json') {
 
   app.post('/api/compliance/review', authenticate, asyncRoute((req, res) => {
     res.json({ user: platform.requestComplianceReview(req.user as PublicUser) });
+  }));
+
+  app.get('/api/kyc', authenticate, asyncRoute((req, res) => {
+    res.json({ submissions: platform.listKycSubmissions(req.user as PublicUser) });
+  }));
+
+  app.post('/api/kyc', authenticate, asyncRoute((req, res) => {
+    res.status(201).json({ submission: platform.submitKyc(req.user as PublicUser, req.body ?? {}) });
   }));
 
   app.use((_req, res) => res.status(404).json({ error: 'Endpoint not found' }));
