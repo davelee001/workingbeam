@@ -57,6 +57,19 @@ interface AppNotification {
   channels?: Array<'in_app' | 'email' | 'sms' | 'push'>;
 }
 
+interface KycSubmission {
+  id: string;
+  legalName: string;
+  country: string;
+  documentType: 'national_id' | 'passport' | 'drivers_license' | 'business_registration';
+  documentLast4: string;
+  address: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+  rejectionReason?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+}
+
 const statusLabels: Record<PaymentStatus, string> = {
   pending: 'Awaiting approval', approved: 'Ready to fund', funding_pending: 'Funding confirmation',
   funded: 'Escrow funded', work_submitted: 'Work submitted', release_pending: 'Release confirmation',
@@ -299,6 +312,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [kycSubmissions, setKycSubmissions] = useState<KycSubmission[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -317,15 +331,17 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [form, setForm] = useState({ clientEmail: '', title: '', description: '', amountBeam: '', currency: 'USD' as PaymentCurrency, dueDate: '' });
   const [sendForm, setSendForm] = useState({ address: '', amountBeam: '', note: '' });
   const [profileForm, setProfileForm] = useState({ name: initialUser.name, phone: initialUser.phone ?? '', walletAddress: initialUser.walletAddress });
+  const [kycForm, setKycForm] = useState({ legalName: initialUser.name, country: '', documentType: 'national_id' as KycSubmission['documentType'], documentNumber: '', address: '' });
 
   const load = useCallback(async () => {
     try {
-      const [paymentData, notificationData, health] = await Promise.all([
+      const [paymentData, notificationData, kycData, health] = await Promise.all([
         request<{ paymentRequests: PaymentRequest[] }>('/api/payment-requests', token),
         request<{ notifications: AppNotification[] }>('/api/notifications', token),
+        request<{ submissions: KycSubmission[] }>('/api/kyc', token),
         request<{ wallet: { mode: string }; email: { mode: string; available: boolean }; push?: { mode: string; available: boolean }; sms?: { mode: string; available: boolean } }>('/api/health'),
       ]);
-      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available)); setSmsMode(health.sms?.mode ?? 'disabled'); setSmsAvailable(Boolean(health.sms?.available));
+      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setKycSubmissions(kycData.submissions); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available)); setSmsMode(health.sms?.mode ?? 'disabled'); setSmsAvailable(Boolean(health.sms?.available));
       const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
       setWalletTransactions(walletData.transactions);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
@@ -416,6 +432,19 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       const result = await request<{ user: User }>('/api/compliance/review', token, { method: 'POST' });
       setCurrentUser(result.user); onUserUpdated(result.user);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to request compliance review'); }
+    finally { setBusy(''); }
+  };
+
+  const submitKyc = async (event: FormEvent) => {
+    event.preventDefault(); setBusy('kyc'); setError('');
+    try {
+      const result = await request<{ submission: KycSubmission }>('/api/kyc', token, { method: 'POST', body: JSON.stringify(kycForm) });
+      setKycSubmissions([result.submission, ...kycSubmissions.filter((item) => item.id !== result.submission.id)]);
+      setCurrentUser({ ...currentUser, complianceStatus: result.submission.status });
+      onUserUpdated({ ...currentUser, complianceStatus: result.submission.status });
+      setKycForm({ ...kycForm, documentNumber: '' });
+      await load();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to submit KYC details'); }
     finally { setBusy(''); }
   };
 
@@ -618,6 +647,17 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
             </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Compliance</small><strong>{complianceLabel(currentUser.complianceStatus)}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="secondary profile-edit-button" disabled={busy === 'compliance'} onClick={() => void requestComplianceReview()}>{busy === 'compliance' ? 'Requesting…' : 'Request compliance review'}</button><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
             <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
+          </section>
+          <section className="kyc-panel">
+            <div><p className="eyebrow dark">KYC verification</p><h2>Identity review</h2><p>Submit identity details for custody, legal, and KYC review. Only the last four document characters are stored in the app record.</p></div>
+            <form className="kyc-form" onSubmit={submitKyc}>
+              <label>Legal name<input required minLength={2} maxLength={120} value={kycForm.legalName} onChange={(event) => setKycForm({ ...kycForm, legalName: event.target.value })} /></label>
+              <div className="form-row"><label>Country<input required minLength={2} maxLength={80} value={kycForm.country} onChange={(event) => setKycForm({ ...kycForm, country: event.target.value })} placeholder="South Sudan" /></label><label>Document type<select required value={kycForm.documentType} onChange={(event) => setKycForm({ ...kycForm, documentType: event.target.value as KycSubmission['documentType'] })}><option value="national_id">National ID</option><option value="passport">Passport</option><option value="drivers_license">Driver's license</option><option value="business_registration">Business registration</option></select></label></div>
+              <label>Document number<input required minLength={4} maxLength={80} value={kycForm.documentNumber} onChange={(event) => setKycForm({ ...kycForm, documentNumber: event.target.value })} placeholder="Stored as last four only" /></label>
+              <label>Residential or business address<textarea required minLength={8} maxLength={240} value={kycForm.address} onChange={(event) => setKycForm({ ...kycForm, address: event.target.value })} placeholder="Street, city, country" /></label>
+              <button className="primary full" disabled={busy === 'kyc'}>{busy === 'kyc' ? 'Submitting…' : 'Submit KYC details'}</button>
+            </form>
+            <div className="kyc-history"><h3>Review history</h3>{kycSubmissions.length === 0 ? <p>No KYC submissions yet.</p> : kycSubmissions.map((submission) => <div key={submission.id}><strong>{complianceLabel(submission.status)}</strong><span>{submission.documentType.replace('_', ' ')} ending {submission.documentLast4}</span><small>{new Date(submission.submittedAt).toLocaleString()}</small>{submission.rejectionReason && <em>{submission.rejectionReason}</em>}</div>)}</div>
           </section>
         </>}
       </main>
