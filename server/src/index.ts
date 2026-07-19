@@ -7,6 +7,7 @@ import { createBeamWallet } from './services/beamWallet.js';
 import { createEmailService } from './services/emailService.js';
 import { PlatformService } from './services/platformService.js';
 import { createPushService } from './services/pushService.js';
+import { createSmsService } from './services/smsService.js';
 
 const PORT = Number(process.env.PORT ?? 5000);
 const dataFile = resolve(process.env.DATA_FILE ?? './data/workingbeam.json');
@@ -22,6 +23,7 @@ async function main() {
   const wallet = createBeamWallet();
   const email = createEmailService();
   const push = createPushService();
+  const sms = createSmsService();
   const verificationCodePepper = process.env.VERIFICATION_CODE_PEPPER?.trim();
   if (process.env.NODE_ENV === 'production' && (!verificationCodePepper || verificationCodePepper.length < 32)) {
     throw new Error('VERIFICATION_CODE_PEPPER must contain at least 32 characters in production');
@@ -32,16 +34,18 @@ async function main() {
   if (process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS !== 'true') {
     throw new Error('FORCE_HTTPS=true is required in production');
   }
-  const platform = new PlatformService(store, wallet, process.env.BEAM_ESCROW_ADDRESS ?? '', email, verificationCodePepper, requireEmailVerification, push);
+  const platform = new PlatformService(store, wallet, process.env.BEAM_ESCROW_ADDRESS ?? '', email, verificationCodePepper, requireEmailVerification, push, undefined, sms);
   const persistenceMode = store instanceof SupabaseStore ? 'supabase' : 'json';
   const app = createApp(platform, persistenceMode);
   const pushHealth = await push.health();
+  const smsHealth = await sms.health();
 
   app.listen(PORT, () => {
     console.log(`WorkingBeam API listening on http://localhost:${PORT}`);
     console.log(`Beam wallet mode: ${wallet.mode}`);
     console.log(`Email verification: ${requireEmailVerification ? 'required' : 'paused'}`);
     console.log(`Push notifications: ${pushHealth.mode}`);
+    console.log(`SMS notifications: ${smsHealth.mode}`);
     console.log(`Persistence: ${persistenceMode}`);
   });
 }
