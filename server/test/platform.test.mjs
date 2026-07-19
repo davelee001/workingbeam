@@ -4,6 +4,7 @@ import { emptyDatabase } from '../dist/domain/types.js';
 import { MemoryStore } from '../dist/persistence/jsonStore.js';
 import { MockBeamWallet } from '../dist/services/beamWallet.js';
 import { MemoryEmailService } from '../dist/services/emailService.js';
+import { FieldEncryption } from '../dist/services/fieldEncryption.js';
 import { PlatformService } from '../dist/services/platformService.js';
 
 class FailingBeamWallet extends MockBeamWallet {
@@ -235,6 +236,36 @@ test('users can update profile details with Beam wallet validation', async () =>
     name: 'Amina Updated',
     walletAddress: 'forged-wallet',
   }), /not valid/);
+});
+
+test('wallet addresses can be encrypted at rest and decrypted for users', async () => {
+  const store = new MemoryStore(emptyDatabase());
+  const emailService = new MemoryEmailService();
+  const platform = new PlatformService(
+    store,
+    new MockBeamWallet(),
+    'mock-escrow-wallet',
+    emailService,
+    'test-verification-pepper',
+    true,
+    undefined,
+    new FieldEncryption('12345678901234567890123456789012'),
+  );
+  const auth = await registerVerified(platform, emailService, {
+    name: 'Encrypted User', email: 'encrypted@example.com', password: 'secure-pass-8',
+    role: 'freelancer', walletAddress: 'beam-encrypted-wallet-address',
+  });
+  assert.equal(auth.user.walletAddress, 'beam-encrypted-wallet-address');
+  const stored = store.read().users.find((user) => user.id === auth.user.id);
+  assert.match(stored.walletAddress, /^enc:v1:/);
+});
+
+test('users can register push tokens and request compliance review', async () => {
+  const { platform, freelancerAuth } = await fixture();
+  const pushUser = platform.registerPushToken(freelancerAuth.user, { token: 'provider-device-token-1234567890' });
+  assert.equal(pushUser.pushTokens.length, 1);
+  const reviewUser = platform.requestComplianceReview(pushUser);
+  assert.equal(reviewUser.complianceStatus, 'pending_review');
 });
 
 test('users can update name when an existing wallet value is unchanged', async () => {
