@@ -376,6 +376,7 @@ Latest local security batch:
 - SMS delivery has a webhook adapter and health reporting alongside email and push.
 - Provider-specific push tokens can be registered per user.
 - Users can request compliance review so custody/legal/KYC readiness is tracked in the product while external review remains operational.
+- KYC submissions are available from the Profile screen and through `/api/kyc`, with review history visible to the signed-in user.
 
 ### Current Verification
 
