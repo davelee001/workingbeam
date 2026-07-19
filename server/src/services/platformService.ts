@@ -17,7 +17,9 @@ import {
 import { DataStore } from '../persistence/jsonStore.js';
 import { BeamWallet } from './beamWallet.js';
 import { EmailService } from './emailService.js';
+import { FieldEncryption } from './fieldEncryption.js';
 import { DisabledPushService, PushService } from './pushService.js';
+import { DisabledSmsService, SmsService } from './smsService.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_HOURS = 24;
@@ -118,6 +120,8 @@ export class PlatformService {
     private readonly verificationCodePepper = 'workingbeam-development-verification-pepper',
     private readonly requireEmailVerification = true,
     private readonly pushService: PushService = new DisabledPushService(),
+    private readonly fieldEncryption = new FieldEncryption(),
+    private readonly smsService: SmsService = new DisabledSmsService(),
   ) {}
 
   private createSession(userId: string): { session: Session; token: string } {
@@ -151,6 +155,24 @@ export class PlatformService {
         console.error('Push notification delivery failed', error);
       });
     }
+    if (notification.channels.includes('sms')) {
+      const user = database.users.find((item) => item.id === notification.userId);
+      void this.smsService.send(notification, user?.phone).catch((error) => {
+        console.error('SMS notification delivery failed', error);
+      });
+    }
+  }
+
+  private encryptWalletAddress(address: string): string {
+    return this.fieldEncryption.encrypt(address);
+  }
+
+  private decryptWalletAddress(address: string): string {
+    return this.fieldEncryption.decrypt(address);
+  }
+
+  private publicUser(user: User): PublicUser {
+    return toPublicUser({ ...user, walletAddress: this.decryptWalletAddress(user.walletAddress) });
   }
 
   async register(input: {
@@ -174,7 +196,7 @@ export class PlatformService {
       email,
       passwordHash: await hashPassword(input.password),
       role: input.role,
-      walletAddress: input.walletAddress.trim(),
+      walletAddress: this.encryptWalletAddress(input.walletAddress.trim()),
       phone: input.phone?.trim() || undefined,
       createdAt: now(),
     };
@@ -186,7 +208,7 @@ export class PlatformService {
         database.sessions.push(session);
         database.auditEvents.push(this.audit(user.id, 'auth.register', 'user', user.id, { role: user.role, emailVerification: 'paused', walletType: addressValidation.type }));
       });
-      return { user: toPublicUser(user), token };
+      return { user: this.publicUser(user), token };
     }
     const code = createVerificationCode();
     const timestamp = now();
@@ -243,7 +265,7 @@ export class PlatformService {
       database.sessions.push(session);
       database.auditEvents.push(this.audit(user.id, 'auth.email_verified', 'user', user.id));
     });
-    return { user: toPublicUser({ ...user, emailVerifiedAt: now() }), token };
+    return { user: this.publicUser({ ...user, emailVerifiedAt: now() }), token };
   }
 
   async resendEmailVerification(emailInput: string | undefined): Promise<{ sent: true }> {
@@ -286,7 +308,7 @@ export class PlatformService {
       database.sessions.push(session);
       database.auditEvents.push(this.audit(user.id, 'auth.login', 'user', user.id));
     });
-    return { user: toPublicUser(user), token };
+    return { user: this.publicUser(user), token };
   }
 
   authenticate(token: string | undefined): PublicUser {
@@ -299,7 +321,7 @@ export class PlatformService {
     const user = database.users.find((item) => item.id === session.userId);
     if (!user) throw new PlatformError('Account no longer exists', 401);
     if (this.requireEmailVerification && !user.emailVerifiedAt) throw new PlatformError('Email verification is required', 401, 'EMAIL_UNVERIFIED');
-    return toPublicUser(user);
+    return this.publicUser(user);
   }
 
   logout(token: string): void {
@@ -319,7 +341,8 @@ export class PlatformService {
     const existing = this.store.read().users.find((item) => item.id === actor.id);
     if (!existing) throw new PlatformError('Account no longer exists', 404);
     let walletType = 'unchanged';
-    if (walletAddress !== existing.walletAddress) {
+    const existingWalletAddress = this.decryptWalletAddress(existing.walletAddress);
+    if (walletAddress !== existingWalletAddress) {
       let addressValidation;
       try {
         addressValidation = await this.wallet.validateAddress(walletAddress);
@@ -333,11 +356,37 @@ export class PlatformService {
       const user = database.users.find((item) => item.id === actor.id) as User;
       user.name = name;
       user.phone = phone || undefined;
-      user.walletAddress = walletAddress;
+      user.walletAddress = this.encryptWalletAddress(walletAddress);
       updated = user;
       database.auditEvents.push(this.audit(actor.id, 'profile.update', 'user', actor.id, { walletType }));
     });
-    return toPublicUser(updated as User);
+    return this.publicUser(updated as User);
+  }
+
+  registerPushToken(actor: PublicUser, input: { token?: string }): PublicUser {
+    const token = input.token?.trim() ?? '';
+    if (token.length < 20 || token.length > 500) throw new PlatformError('A valid push token is required');
+    let updated: User | undefined;
+    this.store.mutate((database) => {
+      const user = database.users.find((item) => item.id === actor.id) as User;
+      const tokens = new Set(user.pushTokens ?? []);
+      tokens.add(token);
+      user.pushTokens = [...tokens].slice(-10);
+      updated = user;
+      database.auditEvents.push(this.audit(actor.id, 'notification.push_token_registered', 'user', actor.id));
+    });
+    return this.publicUser(updated as User);
+  }
+
+  requestComplianceReview(actor: PublicUser): PublicUser {
+    let updated: User | undefined;
+    this.store.mutate((database) => {
+      const user = database.users.find((item) => item.id === actor.id) as User;
+      user.complianceStatus = 'pending_review';
+      updated = user;
+      database.auditEvents.push(this.audit(actor.id, 'compliance.review_requested', 'user', actor.id));
+    });
+    return this.publicUser(updated as User);
   }
 
   async generateWallet(actor: PublicUser): Promise<{ user: PublicUser; address: string }> {
@@ -348,16 +397,16 @@ export class PlatformService {
     this.store.mutate((database) => {
       const user = database.users.find((item) => item.id === actor.id) as User | undefined;
       if (!user) throw new PlatformError('Account no longer exists', 404);
-      user.walletAddress = address;
+      user.walletAddress = this.encryptWalletAddress(address);
       updated = user;
       database.auditEvents.push(this.audit(actor.id, 'wallet.generate', 'user', actor.id, { walletType: validation.type }));
     });
-    return { user: toPublicUser(updated as User), address };
+    return { user: this.publicUser(updated as User), address };
   }
 
   depositAddress(actor: PublicUser): { address: string; label: string; mode: BeamWallet['mode'] } {
     return {
-      address: actor.walletAddress,
+      address: this.decryptWalletAddress(actor.walletAddress),
       label: `WorkingBeam deposit address for ${actor.email}`,
       mode: this.wallet.mode,
     };
@@ -465,8 +514,8 @@ export class PlatformService {
     if (!freelancer || !client) throw new PlatformError('Payment request account is missing', 500);
     return {
       ...request,
-      freelancer: toPublicUser(freelancer),
-      client: toPublicUser(client),
+      freelancer: this.publicUser(freelancer),
+      client: this.publicUser(client),
       transactions: database.transactions.filter((transaction) => transaction.paymentRequestId === request.id),
     };
   }
@@ -544,10 +593,11 @@ export class PlatformService {
     const view = this.paymentView(id, actor);
     if (view.clientId !== actor.id) throw new PlatformError('Only the assigned client can release escrow', 403);
     if (view.status !== 'work_submitted') throw new PlatformError('Work must be submitted before escrow is released', 409);
-    const recipientValidation = await this.wallet.validateAddress(view.freelancer.walletAddress);
+    const freelancerWalletAddress = this.decryptWalletAddress(view.freelancer.walletAddress);
+    const recipientValidation = await this.wallet.validateAddress(freelancerWalletAddress);
     if (!recipientValidation.valid) throw new PlatformError('The freelancer Beam address or token is no longer valid', 409, 'INVALID_BEAM_ADDRESS');
     const walletTransactionId = await this.wallet.send({
-      address: view.freelancer.walletAddress, amountBeam: view.amountBeam,
+      address: freelancerWalletAddress, amountBeam: view.amountBeam,
       comment: `WorkingBeam escrow release ${view.id}`,
     });
     this.store.mutate((database) => {
@@ -679,5 +729,9 @@ export class PlatformService {
 
   pushHealth() {
     return this.pushService.health();
+  }
+
+  smsHealth() {
+    return this.smsService.health();
   }
 }
