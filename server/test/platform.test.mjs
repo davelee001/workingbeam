@@ -268,6 +268,21 @@ test('users can register push tokens and request compliance review', async () =>
   assert.equal(reviewUser.complianceStatus, 'pending_review');
 });
 
+test('users can submit KYC details for compliance review', async () => {
+  const { platform, freelancerAuth } = await fixture();
+  const submission = platform.submitKyc(freelancerAuth.user, {
+    legalName: 'Amina Freelancer',
+    country: 'South Sudan',
+    documentType: 'passport',
+    documentNumber: 'P123456789',
+    address: 'Airport Road, Juba, South Sudan',
+  });
+  assert.equal(submission.status, 'pending_review');
+  assert.equal(submission.documentLast4, '6789');
+  assert.equal(submission.user.complianceStatus, 'pending_review');
+  assert.equal(platform.listKycSubmissions(freelancerAuth.user).length, 1);
+});
+
 test('users can update name when an existing wallet value is unchanged', async () => {
   const { platform, store, freelancerAuth } = await fixture();
   store.mutate((database) => {
