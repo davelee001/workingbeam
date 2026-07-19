@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BeamWalletRpc } from '../dist/services/beamWallet.js';
 import { WebhookPushService } from '../dist/services/pushService.js';
+import { WebhookSmsService } from '../dist/services/smsService.js';
 
 test('Beam validation trusts the server-side wallet provider response', async (context) => {
   const originalFetch = globalThis.fetch;
@@ -55,4 +56,27 @@ test('push webhook reports delivery failures', async (context) => {
     read: false,
     createdAt: '2026-07-18T00:00:00.000Z',
   }), /HTTP 502/);
+});
+
+test('SMS webhook delivers to the configured phone number', async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  let delivered;
+  globalThis.fetch = async (url, init) => {
+    delivered = { url, init };
+    return new Response('{}', { status: 202, headers: { 'content-type': 'application/json' } });
+  };
+  const sms = new WebhookSmsService('https://sms.example.com/messages', 'sms-secret');
+  await sms.send({
+    id: 'notice-3',
+    userId: 'user-3',
+    title: 'Dispute opened',
+    message: 'A dispute needs review.',
+    channels: ['sms'],
+    read: false,
+    createdAt: '2026-07-18T00:00:00.000Z',
+  }, '+211900000');
+  assert.equal(delivered.url, 'https://sms.example.com/messages');
+  assert.equal(delivered.init.headers.authorization, 'Bearer sms-secret');
+  assert.equal(JSON.parse(delivered.init.body).phone, '+211900000');
 });
