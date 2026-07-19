@@ -15,6 +15,8 @@ interface User {
   role: Role;
   walletAddress: string;
   phone?: string;
+  pushTokens?: string[];
+  complianceStatus?: 'not_started' | 'pending_review' | 'approved' | 'rejected';
   emailVerified: boolean;
 }
 
@@ -303,6 +305,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [emailAvailable, setEmailAvailable] = useState(false);
   const [pushMode, setPushMode] = useState('disabled');
   const [pushAvailable, setPushAvailable] = useState(false);
+  const [smsMode, setSmsMode] = useState('disabled');
+  const [smsAvailable, setSmsAvailable] = useState(false);
   const [screen, setScreen] = useState<DashboardScreen>(initialScreen);
   const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
@@ -315,9 +319,9 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       const [paymentData, notificationData, health] = await Promise.all([
         request<{ paymentRequests: PaymentRequest[] }>('/api/payment-requests', token),
         request<{ notifications: AppNotification[] }>('/api/notifications', token),
-        request<{ wallet: { mode: string }; email: { mode: string; available: boolean }; push?: { mode: string; available: boolean } }>('/api/health'),
+        request<{ wallet: { mode: string }; email: { mode: string; available: boolean }; push?: { mode: string; available: boolean }; sms?: { mode: string; available: boolean } }>('/api/health'),
       ]);
-      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available));
+      setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available)); setSmsMode(health.sms?.mode ?? 'disabled'); setSmsAvailable(Boolean(health.sms?.available));
       const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
       setWalletTransactions(walletData.transactions);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
@@ -388,6 +392,26 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       setSendForm({ address: '', amountBeam: '', note: '' });
       await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to send payment'); }
+    finally { setBusy(''); }
+  };
+
+  const registerPushToken = async () => {
+    const tokenValue = window.prompt('Paste the push provider token for this browser/device:');
+    if (!tokenValue) return;
+    setBusy('push-token'); setError('');
+    try {
+      const result = await request<{ user: User }>('/api/notifications/push-token', token, { method: 'POST', body: JSON.stringify({ token: tokenValue }) });
+      setCurrentUser(result.user); onUserUpdated(result.user);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to register push token'); }
+    finally { setBusy(''); }
+  };
+
+  const requestComplianceReview = async () => {
+    setBusy('compliance'); setError('');
+    try {
+      const result = await request<{ user: User }>('/api/compliance/review', token, { method: 'POST' });
+      setCurrentUser(result.user); onUserUpdated(result.user);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to request compliance review'); }
     finally { setBusy(''); }
   };
 
@@ -549,6 +573,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <article><small>Authentication</small><strong>{currentUser.emailVerified ? 'Email verified' : 'Verification paused'}</strong><span>Sessions use hashed bearer tokens and server-side ownership checks.</span></article>
             <article><small>Email</small><strong>{emailAvailable ? emailMode : 'Needs setup'}</strong><span>{emailMode === 'smtp' ? 'Production SMTP health is checked by the API.' : 'Console/memory email is development-only; configure SMTP for production.'}</span></article>
             <article><small>Push notifications</small><strong>{pushAvailable ? pushMode : 'Needs setup'}</strong><span>{pushMode === 'webhook' ? 'Push webhook provider is configured.' : 'Payment events include push intent; configure a provider for device delivery.'}</span></article>
+            <article><small>Push tokens</small><strong>{currentUser.pushTokens?.length ?? 0}</strong><span><button className="inline-action" disabled={busy === 'push-token'} onClick={() => void registerPushToken()}>{busy === 'push-token' ? 'Saving…' : 'Register device token'}</button></span></article>
+            <article><small>SMS</small><strong>{smsAvailable ? smsMode : 'Needs setup'}</strong><span>{smsMode === 'webhook' ? 'SMS webhook provider is configured.' : 'Configure SMS webhook and phone numbers for text delivery.'}</span></article>
             <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
             <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development; private transactions are simulated.' : 'Live Beam Wallet API is connected for private Beam transactions.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
@@ -586,7 +612,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <label>Beam wallet address or token<input required minLength={10} value={profileForm.walletAddress} onChange={(event) => setProfileForm({ ...profileForm, walletAddress: event.target.value })} /></label>
               {error && <div className="error-banner">{error}</div>}
               <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
-            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
+            </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Compliance</small><strong>{currentUser.complianceStatus ?? 'not_started'}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="secondary profile-edit-button" disabled={busy === 'compliance'} onClick={() => void requestComplianceReview()}>{busy === 'compliance' ? 'Requesting…' : 'Request compliance review'}</button><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
             <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
           </section>
         </>}
