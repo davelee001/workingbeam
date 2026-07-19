@@ -69,6 +69,10 @@ WorkingBeam is a freelancer payment-request and escrow platform built around the
 - Production HTTPS enforcement through `FORCE_HTTPS=true` behind a trusted proxy
 - Push notification webhook delivery adapter with production HTTPS validation
 - Basic fraud detection that blocks high-risk payment-request amounts and same-day request velocity
+- Optional AES-256-GCM encryption for stored wallet addresses/tokens with `WALLET_ENCRYPTION_KEY`
+- Push token registration endpoint for provider-specific browser/device tokens
+- SMS webhook delivery adapter for notification events with `sms` channel intent
+- Compliance review request state for custody/legal/KYC readiness tracking
 - Responsive freelancer/client workspace with dedicated Overview, Payments, and Wallet screens
 
 ## Product Screens
@@ -228,7 +232,9 @@ This MVP implements a custodial escrow workflow. A production launch also requir
 - **Persistence:** atomic JSON store for local development or Supabase Postgres JSONB state for hosted deployment
 - **Authentication:** scrypt password hashes and expiring bearer sessions
 - **Email:** SMTP through Nodemailer with hashed, expiring activation codes
-- **Push:** payment events include push channel intent; a production push provider still needs to be connected for device delivery
+- **Push:** payment events include push channel intent and users can register provider-specific device tokens
+- **SMS:** SMS-channel notifications can be delivered through a configured HTTPS webhook provider
+- **Compliance:** users can request compliance review; real custody/legal/KYC approval remains an external operational process
 - **HTTPS:** production startup requires explicit HTTPS enforcement so deployments do not accidentally serve the API over plain HTTP
 - **Fraud:** high-value and high-velocity payment request creation is blocked and audited for manual review
 - **Blockchain:** Beam Wallet API JSON-RPC adapter
@@ -383,11 +389,14 @@ The test suite covers email-code hashing, expiry and lockout, unverified login b
 | `TRUST_PROXY` | empty | Trusted reverse-proxy hop count; set deliberately for accurate client IP rate limiting |
 | `FORCE_HTTPS` | `false` in development; required as `true` in production | Rejects non-HTTPS requests behind a trusted reverse proxy |
 | `VERIFICATION_CODE_PEPPER` | development value | Random secret of at least 32 characters that protects stored email-code hashes |
+| `WALLET_ENCRYPTION_KEY` | empty | Optional secret of at least 32 characters for AES-256-GCM encryption of stored wallet addresses/tokens |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` in example; production defaults to `true` | Enables email-code activation without removing the verification implementation |
 | `SMTP_URL` | empty in development | `smtp://` or `smtps://` delivery URL; mandatory in production |
 | `EMAIL_FROM` | example sender | Verified sender used for activation messages |
 | `PUSH_WEBHOOK_URL` | empty in development | HTTPS push-provider webhook; mandatory in production |
 | `PUSH_WEBHOOK_TOKEN` | empty | Optional bearer token sent to the push webhook |
+| `SMS_WEBHOOK_URL` | empty | HTTPS SMS-provider webhook for SMS-channel notification delivery |
+| `SMS_WEBHOOK_TOKEN` | empty | Optional bearer token sent to the SMS webhook |
 | `BEAM_WALLET_API_URL` | empty | Live endpoint, for example `https://wallet.internal/api/wallet` |
 | `BEAM_WALLET_API_KEY` | empty | Wallet API ACL key |
 | `BEAM_ESCROW_ADDRESS` | empty | Custodial escrow wallet address/token |
@@ -444,12 +453,12 @@ The repository is a functional MVP, not a production custody deployment. Before 
 - Store session and wallet secrets in a managed secret store.
 - Put the API behind a managed TLS reverse proxy and distributed rate limiting.
 - Add phone verification, MFA, password reset, and user-facing session management.
-- Connect SMS delivery and provider-specific push token registration.
+- Complete provider-specific push SDK/device-token collection in the client.
 - Add signed webhooks or a background confirmation worker instead of manual refresh.
 - Add an administrator/arbitrator workflow for disputes and refunds.
 - Implement ledger reconciliation, withdrawal controls, and wallet balance monitoring.
 - Obtain an independent application and smart-custody security audit.
-- Complete legal review for escrow/custody and applicable KYC/AML obligations.
+- Complete external legal review for escrow/custody and applicable KYC/AML obligations.
 
 ## License
 
