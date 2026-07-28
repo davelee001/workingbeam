@@ -20,3 +20,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Friendly timestamps
 
 - Payment cards and transaction rows now show relative labels such as `2 hr ago`, `3 days ago`, or a short date.
+
+## Status badges
+
+- Payment lifecycle states use distinct polished badge colors for pending, funded, released, disputed, failed, and expired work.
