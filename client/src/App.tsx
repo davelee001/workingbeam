@@ -5,8 +5,10 @@ import { PublicPath, PublicSite } from './PublicSite';
 type Role = 'freelancer' | 'client';
 type DashboardScreen = 'overview' | 'payments' | 'wallet' | 'transactions' | 'escrow' | 'settings' | 'outstanding' | 'history' | 'profile';
 type PaymentFilter = 'all' | 'active' | 'escrow' | 'completed' | 'disputed' | 'failed' | 'expired';
+type PaymentSort = 'newest' | 'oldest' | 'amountHigh' | 'amountLow' | 'dueSoon';
 type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'failed' | 'expired' | 'cancelled';
 type PaymentCurrency = 'USD' | 'EUR' | 'GBP' | 'SSP' | 'UGX' | 'KSH' | 'TSH' | 'SDG';
+type ToastKind = 'success' | 'error' | 'info';
 
 interface User {
   id: string;
@@ -70,6 +72,12 @@ interface KycSubmission {
   reviewedAt?: string;
 }
 
+interface ToastMessage {
+  id: number;
+  kind: ToastKind;
+  message: string;
+}
+
 const statusLabels: Record<PaymentStatus, string> = {
   pending: 'Awaiting approval', approved: 'Ready to fund', funding_pending: 'Funding confirmation',
   funded: 'Escrow funded', work_submitted: 'Work submitted', release_pending: 'Release confirmation',
@@ -96,6 +104,23 @@ function qrCodeUrl(link: string): string {
 function notificationChannelLabel(channel: 'in_app' | 'email' | 'sms' | 'push'): string {
   if (channel === 'in_app') return 'in app';
   return channel;
+}
+
+function friendlyTime(value?: string): string {
+  if (!value) return 'Date not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const diff = Date.now() - date.getTime();
+  const abs = Math.abs(diff);
+  const minutes = Math.round(abs / 60000);
+  const hours = Math.round(abs / 3600000);
+  const days = Math.round(abs / 86400000);
+  const suffix = diff >= 0 ? 'ago' : 'from now';
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ${suffix}`;
+  if (hours < 24) return `${hours} hr ${suffix}`;
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ${suffix}`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function complianceLabel(status: User['complianceStatus']): string {
@@ -129,6 +154,14 @@ function downloadReceipt(payment: PaymentRequest): void {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function SkeletonCards() {
+  return (
+    <>
+      {[0, 1, 2, 3].map((item) => <article className="payment-card skeleton-card" key={item} aria-label="Loading payment"><span /><div className="skeleton-title" /><p /><div /></article>)}
+    </>
+  );
 }
 
 class ApiError extends Error {
@@ -261,11 +294,15 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
   );
 }
 
-function PaymentCard({ payment, user, onAction }: {
-  payment: PaymentRequest; user: User; onAction: (action: string, payment: PaymentRequest) => void;
+function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: {
+  payment: PaymentRequest; user: User; onAction: (action: string, payment: PaymentRequest) => void; onToast: (message: string, kind?: ToastKind) => void; onTransactionSelect: (transaction: Transaction, payment?: PaymentRequest) => void;
 }) {
   const pendingTransaction = payment.transactions.find((transaction) => transaction.status === 'pending');
   const link = paymentLink(payment);
+  const copyText = async (value: string, label: string) => {
+    await navigator.clipboard?.writeText(value);
+    onToast(`${label} copied`);
+  };
   return (
     <article className="payment-card">
       <div className="payment-top">
@@ -273,14 +310,14 @@ function PaymentCard({ payment, user, onAction }: {
         <div className="amount"><strong>{payment.amountBeam.toLocaleString()}</strong><span>{paymentCurrency(payment)}</span></div>
       </div>
       <p className="description">{payment.description || 'No additional description.'}</p>
-      {payment.dueDate && <p className={payment.status === 'expired' ? 'due-date overdue' : 'due-date'}>Due {new Date(`${payment.dueDate}T00:00:00`).toLocaleDateString()}</p>}
+      <div className="card-meta"><span>Created {friendlyTime(payment.createdAt)}</span>{payment.dueDate && <span className={payment.status === 'expired' ? 'overdue' : ''}>Due {friendlyTime(`${payment.dueDate}T00:00:00`)}</span>}</div>
       <div className="counterparty"><div className="avatar">{(user.role === 'client' ? payment.freelancer.name : payment.client.name).slice(0, 1)}</div><div><small>{user.role === 'client' ? 'Freelancer' : 'Client'}</small><strong>{user.role === 'client' ? payment.freelancer.name : payment.client.name}</strong></div></div>
       <div className="payment-share">
         <div>
           <small>Generated payment link</small>
           <code>{link}</code>
           <div className="share-actions">
-            <button className="secondary" aria-label={`Copy payment link for ${payment.title}`} onClick={() => void navigator.clipboard?.writeText(link)}>Copy link</button>
+            <button className="secondary" aria-label={`Copy payment link for ${payment.title}`} onClick={() => void copyText(link, 'Payment link')}>Copy link</button>
             <a className="secondary link-button" href={link}>Open</a>
           </div>
         </div>
@@ -302,7 +339,7 @@ function PaymentCard({ payment, user, onAction }: {
         {payment.status === 'released' && <button className="secondary" onClick={() => downloadReceipt(payment)}>Download receipt</button>}
         {['funded','work_submitted'].includes(payment.status) && <button className="text-danger" onClick={() => onAction('dispute', payment)}>Open dispute</button>}
       </div>
-      {payment.transactions.length > 0 && <div className="tx-list">{payment.transactions.map((transaction) => <div key={transaction.id}><span>{transaction.kind}</span><code>{transaction.walletTransactionId.slice(0, 18)}…</code><b className={transaction.status}>{transaction.status}</b></div>)}</div>}
+      {payment.transactions.length > 0 && <div className="tx-list">{payment.transactions.map((transaction) => <button type="button" key={transaction.id} onClick={() => onTransactionSelect(transaction, payment)}><span>{transaction.kind}</span><code>{transaction.walletTransactionId.slice(0, 18)}...</code><b className={transaction.status}>{transaction.status}</b></button>)}</div>}
     </article>
   );
 }
@@ -313,6 +350,10 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [walletTransactions, setWalletTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [kycSubmissions, setKycSubmissions] = useState<KycSubmission[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<{ transaction: Transaction; payment?: PaymentRequest } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -328,10 +369,19 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const [screen, setScreen] = useState<DashboardScreen>(initialScreen);
   const [profileEditing, setProfileEditing] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentSort, setPaymentSort] = useState<PaymentSort>('newest');
+  const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true, sms: Boolean(initialUser.phone), inApp: true });
   const [form, setForm] = useState({ clientEmail: '', title: '', description: '', amountBeam: '', currency: 'USD' as PaymentCurrency, dueDate: '' });
   const [sendForm, setSendForm] = useState({ address: '', amountBeam: '', note: '' });
   const [profileForm, setProfileForm] = useState({ name: initialUser.name, phone: initialUser.phone ?? '', walletAddress: initialUser.walletAddress });
   const [kycForm, setKycForm] = useState({ legalName: initialUser.name, country: '', documentType: 'national_id' as KycSubmission['documentType'], documentNumber: '', address: '' });
+
+  const toast = useCallback((message: string, kind: ToastKind = 'success') => {
+    const id = Date.now() + Math.random();
+    setToasts((items) => [...items, { id, message, kind }]);
+    window.setTimeout(() => setToasts((items) => items.filter((item) => item.id !== id)), 3600);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -344,15 +394,16 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       setPayments(paymentData.paymentRequests); setNotifications(notificationData.notifications); setKycSubmissions(kycData.submissions); setWalletMode(health.wallet.mode); setEmailMode(health.email.mode); setEmailAvailable(health.email.available); setPushMode(health.push?.mode ?? 'disabled'); setPushAvailable(Boolean(health.push?.available)); setSmsMode(health.sms?.mode ?? 'disabled'); setSmsAvailable(Boolean(health.sms?.available));
       const walletData = await request<{ transactions: Transaction[] }>('/api/wallet/transactions', token);
       setWalletTransactions(walletData.transactions);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); }
-  }, [token]);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load dashboard'); toast('Unable to refresh workspace', 'error'); }
+    finally { setLoaded(true); }
+  }, [token, toast]);
 
   useEffect(() => { void load(); }, [load]);
 
   const mutate = async (key: string, path: string, body?: object) => {
     setBusy(key); setError('');
-    try { await request(path, token, { method: 'POST', body: body ? JSON.stringify(body) : undefined }); await load(); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'Action failed'); }
+    try { await request(path, token, { method: 'POST', body: body ? JSON.stringify(body) : undefined }); await load(); toast('Action completed'); }
+    catch (caught) { const message = caught instanceof Error ? caught.message : 'Action failed'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -368,6 +419,12 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       if (reason) await mutate(`${action}:${payment.id}`, `/api/payment-requests/${payment.id}/dispute`, { reason });
       return;
     }
+    const actionLabels: Record<string, string> = {
+      approve: 'approve this request',
+      fund: `fund ${paymentAmount(payment)} into escrow`,
+      release: `release ${paymentAmount(payment)} to ${payment.freelancer.name}`,
+    };
+    if (actionLabels[action] && !window.confirm(`Are you sure you want to ${actionLabels[action]}?`)) return;
     await mutate(`${action}:${payment.id}`, `/api/payment-requests/${payment.id}/${action}`);
   };
 
@@ -376,7 +433,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
     try {
       await request('/api/payment-requests', token, { method: 'POST', body: JSON.stringify({ ...form, amountBeam: Number(form.amountBeam) }) });
       setForm({ clientEmail: '', title: '', description: '', amountBeam: '', currency: 'USD', dueDate: '' }); setShowCreate(false); await load();
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to create request'); }
+      toast('Payment request created');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to create request'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -390,7 +448,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       setProfileEditing(false);
       setScreen('profile');
       await load();
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to update profile'); }
+      toast('Profile changes saved');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to update profile'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -401,17 +460,20 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       setCurrentUser(result.user); onUserUpdated(result.user);
       setProfileForm({ name: result.user.name, phone: result.user.phone ?? '', walletAddress: result.user.walletAddress });
       await load();
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to generate wallet'); }
+      toast('Wallet generated');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to generate wallet'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
   const sendPayment = async (event: FormEvent) => {
     event.preventDefault(); setBusy('send-payment'); setError('');
+    if (!window.confirm(`Send ${sendForm.amountBeam} BEAM to this address? This action cannot be undone once confirmed by the wallet.`)) { setBusy(''); return; }
     try {
       await request('/api/wallet/send', token, { method: 'POST', body: JSON.stringify({ ...sendForm, amountBeam: Number(sendForm.amountBeam) }) });
       setSendForm({ address: '', amountBeam: '', note: '' });
       await load();
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to send payment'); }
+      toast('Payment sent for confirmation');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to send payment'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -422,7 +484,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
     try {
       const result = await request<{ user: User }>('/api/notifications/push-token', token, { method: 'POST', body: JSON.stringify({ token: tokenValue }) });
       setCurrentUser(result.user); onUserUpdated(result.user);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to register push token'); }
+      toast('Push token registered');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to register push token'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -431,7 +494,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
     try {
       const result = await request<{ user: User }>('/api/compliance/review', token, { method: 'POST' });
       setCurrentUser(result.user); onUserUpdated(result.user);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to request compliance review'); }
+      toast('Compliance review requested');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to request compliance review'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -444,7 +508,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       onUserUpdated({ ...currentUser, complianceStatus: result.submission.status });
       setKycForm({ ...kycForm, documentNumber: '' });
       await load();
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to submit KYC details'); }
+      toast('KYC details submitted');
+    } catch (caught) { const message = caught instanceof Error ? caught.message : 'Unable to submit KYC details'; setError(message); toast(message, 'error'); }
     finally { setBusy(''); }
   };
 
@@ -461,6 +526,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   const failedPayments = payments.filter((item) => item.status === 'failed').length;
   const expiredPayments = payments.filter((item) => item.status === 'expired').length;
   const unread = notifications.filter((item) => !item.read).length;
+  const profileCompleteness = Math.round(([currentUser.name, currentUser.email, currentUser.walletAddress, currentUser.phone, currentUser.emailVerified, currentUser.complianceStatus && currentUser.complianceStatus !== 'not_started'].filter(Boolean).length / 6) * 100);
   const transactions = walletTransactions.map((transaction) => {
     const payment = transaction.paymentRequestId ? payments.find((item) => item.id === transaction.paymentRequestId) : undefined;
     return { ...transaction, paymentTitle: payment?.title ?? (transaction.kind === 'send' ? 'Direct send' : 'Wallet activity') };
@@ -476,11 +542,21 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
     if (paymentFilter === 'failed') return payment.status === 'failed';
     if (paymentFilter === 'expired') return payment.status === 'expired';
     return true;
+  }).filter((payment) => {
+    const query = paymentSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [payment.title, payment.description, payment.client.name, payment.client.email, payment.freelancer.name, payment.freelancer.email, payment.status, paymentCurrency(payment)].some((value) => value.toLowerCase().includes(query));
+  }).sort((a, b) => {
+    if (paymentSort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (paymentSort === 'amountHigh') return b.amountBeam - a.amountBeam;
+    if (paymentSort === 'amountLow') return a.amountBeam - b.amountBeam;
+    if (paymentSort === 'dueSoon') return new Date(a.dueDate ?? '9999-12-31').getTime() - new Date(b.dueDate ?? '9999-12-31').getTime();
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const paymentGrid = (items: PaymentRequest[]) => (
     <section className="payments-grid">
-      {items.length === 0 ? <div className="empty-state"><div>↗</div><h3>{payments.length === 0 ? 'No payment requests yet' : 'No requests match this filter'}</h3><p>{payments.length === 0 ? (currentUser.role === 'freelancer' ? 'Create your first request after agreeing on work with a client.' : 'Requests sent to your account will appear here.') : 'Try another payment status to see more activity.'}</p>{payments.length === 0 && currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>Create request</button>}</div> : items.map((payment) => <PaymentCard key={payment.id} payment={payment} user={currentUser} onAction={(action, item) => { if (!busy) void act(action, item); }} />)}
+      {!loaded ? <SkeletonCards /> : items.length === 0 ? <div className="empty-state"><div>↗</div><h3>{payments.length === 0 ? 'No payment requests yet' : 'No requests match this view'}</h3><p>{payments.length === 0 ? (currentUser.role === 'freelancer' ? 'Create your first request after agreeing on work with a client.' : 'Requests sent to your account will appear here.') : 'Try another status, search term, or sort order to see more activity.'}</p>{payments.length === 0 && currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>Create request</button>}</div> : items.map((payment) => <PaymentCard key={payment.id} payment={payment} user={currentUser} onToast={toast} onTransactionSelect={(transaction, linkedPayment) => setSelectedTransaction({ transaction, payment: linkedPayment })} onAction={(action, item) => { if (!busy) void act(action, item); }} />)}
     </section>
   );
 
@@ -495,7 +571,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           {currentUser.role === 'client' && <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}>History</button>}
           <button className={screen === 'escrow' ? 'active' : ''} onClick={() => setScreen('escrow')}>Escrow</button>
         </nav>
-        <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setScreen('profile')}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button><button className="logout" onClick={() => setShowLogoutConfirm(true)}>Sign out</button></div>
+        <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><div className="user-menu-wrap"><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setUserMenuOpen(!userMenuOpen)}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button>{userMenuOpen && <div className="user-menu"><button onClick={() => { setScreen('profile'); setUserMenuOpen(false); }}>Profile</button><button onClick={() => { setScreen('settings'); setUserMenuOpen(false); }}>Settings</button><button onClick={() => { setScreen('wallet'); setUserMenuOpen(false); }}>Wallet</button><button onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}>Sign out</button></div>}</div></div>
       </header>
       {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><div className="notice-channels">{(item.channels ?? ['in_app']).map((channel) => <span key={channel}>{notificationChannelLabel(channel)}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
@@ -529,7 +605,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           </section>
           <section className="payments-toolbar">
             <div className="filter-tabs">{(['all','active','escrow','completed','disputed','failed','expired'] as PaymentFilter[]).map((filter) => <button key={filter} className={paymentFilter === filter ? 'active' : ''} onClick={() => setPaymentFilter(filter)}>{filter}</button>)}</div>
-            <button className="secondary" onClick={() => void load()}>Refresh</button>
+            <div className="payment-tools"><input aria-label="Search payments" value={paymentSearch} onChange={(event) => setPaymentSearch(event.target.value)} placeholder="Search payments, people, status..." /><select aria-label="Sort payments" value={paymentSort} onChange={(event) => setPaymentSort(event.target.value as PaymentSort)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amountHigh">Highest amount</option><option value="amountLow">Lowest amount</option><option value="dueSoon">Due soon</option></select><button className="secondary" onClick={() => void load()}>Refresh</button></div>
           </section>
           {paymentGrid(filteredPayments)}
         </>}
@@ -544,7 +620,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <div className="card-kicker">Receiving wallet</div>
               <h2>{currentUser.name}</h2>
               <p>Your freelancer releases and account transactions use this Beam address.</p>
-              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
+              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => { void navigator.clipboard?.writeText(currentUser.walletAddress); toast('Wallet address copied'); }}>Copy</button></div>
               <div className="wallet-badges"><span>{walletMode === 'mock' ? 'Privacy simulated in mock mode' : 'Private Beam transactions'}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></div>
               <button className="secondary wallet-generate" disabled={busy === 'generate-wallet'} onClick={() => void generateWallet()}>{busy === 'generate-wallet' ? 'Generating...' : 'Generate wallet'}</button>
             </div>
@@ -559,7 +635,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               <div className="card-kicker">Deposit address</div>
               <h3>Receive BEAM</h3>
               <p>Share this address or token with a payer to receive funds into your WorkingBeam wallet profile.</p>
-              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => void navigator.clipboard?.writeText(currentUser.walletAddress)}>Copy</button></div>
+              <div className="address-box"><code>{currentUser.walletAddress}</code><button onClick={() => { void navigator.clipboard?.writeText(currentUser.walletAddress); toast('Deposit address copied'); }}>Copy</button></div>
             </article>
             <form className="send-payment-form" onSubmit={sendPayment}>
               <div><div className="card-kicker">Send payment</div><h3>Send BEAM</h3><p>Submit a direct wallet transfer outside an escrow request.</p></div>
@@ -571,7 +647,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           </section>
           <section className="section-heading wallet-section-heading"><div><h2>Transaction history</h2><p>Funding and release activity reported by the Beam wallet connection.</p></div><button className="secondary" onClick={() => void load()}>Refresh</button></section>
           <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
-            {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No wallet activity yet</h3><p>Transactions will appear after a client funds the first approved request.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : <>{transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : 'Freelancer release'}</span></div><code>{transaction.walletTransactionId.slice(0, 20)}…</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}</>}
+            {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No wallet activity yet</h3><p>Transactions will appear after a client funds the first approved request.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : <>{transactions.map((transaction) => <button type="button" className="transaction-row" key={transaction.id} onClick={() => setSelectedTransaction({ transaction, payment: transaction.paymentRequestId ? payments.find((item) => item.id === transaction.paymentRequestId) : undefined })}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : 'Freelancer release'} · {friendlyTime(transaction.createdAt)}</span></div><code>{transaction.walletTransactionId.slice(0, 20)}...</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></button>)}</>}
           </section>
           <section className="wallet-security"><div>✓</div><div><h3>Wallet security and privacy</h3><p>WorkingBeam never asks for your Beam seed phrase. Private transaction behavior is provided by the connected live Beam wallet; mock mode simulates the workflow without real privacy guarantees or real funds.</p></div></section>
         </>}
@@ -585,7 +661,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <div><span>Failed</span><strong>{transactions.filter((transaction) => transaction.status === 'failed').length}</strong></div>
           </section>
           <section className={`transaction-table ${transactions.length === 0 ? 'is-empty' : ''}`}>
-            {transactions.length === 0 ? <div className="wallet-empty"><span>â—‡</span><h3>No transactions yet</h3><p>Funding and release transactions will appear after escrow activity begins.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : transactions.map((transaction) => <div className="transaction-row" key={transaction.id}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? 'â†“' : 'â†‘'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : transaction.kind === 'release' ? 'Freelancer release' : 'Refund'}</span></div><code>{transaction.walletTransactionId}</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></div>)}
+            {transactions.length === 0 ? <div className="wallet-empty"><span>◇</span><h3>No transactions yet</h3><p>Funding and release transactions will appear after escrow activity begins.</p><button className="secondary" onClick={() => setScreen('payments')}>Go to payments</button></div> : transactions.map((transaction) => <button type="button" className="transaction-row" key={transaction.id} onClick={() => setSelectedTransaction({ transaction, payment: transaction.paymentRequestId ? payments.find((item) => item.id === transaction.paymentRequestId) : undefined })}><div className={`tx-icon ${transaction.kind}`}>{transaction.kind === 'funding' ? '↓' : '↑'}</div><div><strong>{transaction.paymentTitle}</strong><span>{transaction.kind === 'funding' ? 'Escrow funding' : transaction.kind === 'release' ? 'Freelancer release' : 'Refund'} · {friendlyTime(transaction.createdAt)}</span></div><code>{transaction.walletTransactionId}</code><strong>{transaction.amountBeam.toLocaleString()} BEAM</strong><b className={transaction.status}>{transaction.status}</b></button>)}
           </section>
         </>}
 
@@ -609,6 +685,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <article><small>Push tokens</small><strong>{currentUser.pushTokens?.length ?? 0}</strong><span><button className="inline-action" disabled={busy === 'push-token'} onClick={() => void registerPushToken()}>{busy === 'push-token' ? 'Saving…' : 'Register device token'}</button></span></article>
             <article><small>SMS</small><strong>{smsAvailable ? smsMode : 'Needs setup'}</strong><span>{smsMode === 'webhook' ? 'SMS webhook provider is configured.' : 'Configure SMS webhook and phone numbers for text delivery.'}</span></article>
             <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
+            <article className="preference-card"><small>Notification preferences</small><strong>Channels</strong><label><input type="checkbox" checked={notificationPrefs.inApp} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, inApp: event.target.checked })} /> In-app</label><label><input type="checkbox" checked={notificationPrefs.email} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, email: event.target.checked })} /> Email</label><label><input type="checkbox" checked={notificationPrefs.push} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, push: event.target.checked })} /> Push</label><label><input type="checkbox" checked={notificationPrefs.sms} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, sms: event.target.checked })} /> SMS</label><span>Local preference preview; provider delivery still follows server configuration.</span></article>
             <article><small>Wallet mode</small><strong>{walletMode}</strong><span>{walletMode === 'mock' ? 'Local mock wallet is active for development; private transactions are simulated.' : 'Live Beam Wallet API is connected for private Beam transactions.'}</span></article>
             <article><small>Security</small><strong>Server validated</strong><span>Actions are checked by role, ownership, wallet validation, and payment state.</span></article>
           </section>
@@ -646,7 +723,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
               {error && <div className="error-banner">{error}</div>}
               <div className="profile-form-actions"><button type="button" className="secondary" disabled={busy === 'profile'} onClick={() => setProfileEditing(false)}>Cancel</button><button className="primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Saving...' : 'Save changes'}</button></div>
             </form> : <section className="profile-form profile-details"><div><small>Full name</small><strong>{currentUser.name}</strong></div><div><small>Email address</small><strong>{currentUser.email}</strong></div><div><small>Phone</small><strong>{currentUser.phone || 'Not provided'}</strong></div><div><small>Compliance</small><strong>{complianceLabel(currentUser.complianceStatus)}</strong></div><div><small>Beam address or token</small><code>{currentUser.walletAddress}</code></div><button className="secondary profile-edit-button" disabled={busy === 'compliance'} onClick={() => void requestComplianceReview()}>{busy === 'compliance' ? 'Requesting…' : 'Request compliance review'}</button><button className="primary profile-edit-button" onClick={() => { setProfileForm({ name: currentUser.name, phone: currentUser.phone ?? '', walletAddress: currentUser.walletAddress }); setProfileEditing(true); }}>Edit profile</button></section>}
-            <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span></aside>
+            <aside className="profile-summary"><div className="avatar">{currentUser.name.slice(0, 1)}</div><h2>{currentUser.name}</h2><p>{currentUser.email}</p><span>{currentUser.role}</span><span>{currentUser.emailVerified ? 'Email verified' : 'Email verification paused'}</span><div className="profile-completeness"><div><strong>{profileCompleteness}%</strong><small>Profile complete</small></div><progress value={profileCompleteness} max={100} /><p>{profileCompleteness < 100 ? 'Add phone/KYC details to strengthen account trust.' : 'Your profile has the key trust signals covered.'}</p></div></aside>
           </section>
           <section className="kyc-panel">
             <div><p className="eyebrow dark">KYC verification</p><h2>Identity review</h2><p>Submit identity details for custody, legal, and KYC review. Only the last four document characters are stored in the app record.</p></div>
@@ -661,6 +738,9 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           </section>
         </>}
       </main>
+      <footer className="app-footer"><span>WorkingBeam MVP</span><span>Mock escrow lifecycle · Beam-ready wallet adapter · v1.0</span><button onClick={() => setScreen('settings')}>System settings</button></footer>
+      <div className="toast-stack" aria-live="polite">{toasts.map((item) => <div className={`toast ${item.kind}`} key={item.id}>{item.message}</div>)}</div>
+      {selectedTransaction && <aside className="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="transaction-detail-title"><div className="aside-title"><div><p className="eyebrow dark">Transaction detail</p><h2 id="transaction-detail-title">{selectedTransaction.payment?.title ?? (selectedTransaction.transaction.kind === 'send' ? 'Direct send' : 'Wallet transaction')}</h2></div><button onClick={() => setSelectedTransaction(null)}>×</button></div><dl><div><dt>Status</dt><dd><b className={selectedTransaction.transaction.status}>{selectedTransaction.transaction.status}</b></dd></div><div><dt>Type</dt><dd>{selectedTransaction.transaction.kind}</dd></div><div><dt>Amount</dt><dd>{selectedTransaction.transaction.amountBeam.toLocaleString()} BEAM</dd></div><div><dt>Created</dt><dd>{friendlyTime(selectedTransaction.transaction.createdAt)}</dd></div><div><dt>Wallet transaction ID</dt><dd><code>{selectedTransaction.transaction.walletTransactionId}</code><button className="inline-action" onClick={() => { void navigator.clipboard?.writeText(selectedTransaction.transaction.walletTransactionId); toast('Transaction ID copied'); }}>Copy ID</button></dd></div>{selectedTransaction.payment && <div><dt>Request status</dt><dd>{statusLabels[selectedTransaction.payment.status]}</dd></div>}</dl></aside>}
       {showLogoutConfirm && <div className="modal-backdrop" onMouseDown={() => setShowLogoutConfirm(false)}><section className="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="signout-title" onMouseDown={(event) => event.stopPropagation()}><div className="confirm-icon">↗</div><h2 id="signout-title">Are you sure you want to sign out?</h2><p>Your current session will end. You can sign back in at any time.</p><div className="confirm-actions"><button className="secondary" onClick={() => setShowLogoutConfirm(false)}>Cancel</button><button className="signout-confirm" onClick={onLogout}>Sign out</button></div></section></div>}
       {showCreate && <div className="modal-backdrop" onMouseDown={() => setShowCreate(false)}><section className="modal" onMouseDown={(event) => event.stopPropagation()}><div className="aside-title"><div><p className="eyebrow dark">New request</p><h2>Request a payment</h2></div><button onClick={() => setShowCreate(false)}>×</button></div><form onSubmit={createPayment}><label>Client email<input type="email" required value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} placeholder="client@example.com" /></label><label>Project or milestone<input required minLength={3} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Landing page design" /></label><label>Description<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What is included in this payment?" /></label><div className="form-row three"><label>Amount<input type="number" required min="0.01" step="0.01" value={form.amountBeam} onChange={(e) => setForm({ ...form, amountBeam: e.target.value })} /></label><label>Currency<select required value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value as PaymentCurrency })}>{paymentCurrencies.map((currency) => <option key={currency} value={currency}>{currency}</option>)}</select></label><label>Due date<input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} /></label></div><button className="primary full" disabled={busy === 'create'}>{busy === 'create' ? 'Creating…' : 'Send payment request'}</button></form></section></div>}
     </div>
