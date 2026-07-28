@@ -88,3 +88,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact toast priority
 
 - Toast feedback is treated as a high-impact polish item because users should never wonder whether a save or payment action worked.
+
+## High-impact badge priority
+
+- Status badges are prioritized because lifecycle clarity is central to escrow trust.
