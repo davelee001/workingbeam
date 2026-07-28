@@ -60,3 +60,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Subtle animations
 
 - Buttons, cards, menus, skeleton shimmer, and transaction rows use restrained hover or loading motion.
+
+## Transaction detail view
+
+- Clicking a transaction opens a detail drawer with amount, status, wallet transaction ID, date, and related request context.
