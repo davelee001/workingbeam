@@ -7,6 +7,8 @@
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "cd server && npm run dev",
     "client:dev": "cd client && npm start",
+    "demo": "powershell -ExecutionPolicy Bypass -File scripts/start-demo.ps1",
+    "demo:no-install": "powershell -ExecutionPolicy Bypass -File scripts/start-demo.ps1 -NoInstall",
     "server:build": "cd server && npm run build",
     "client:build": "cd client && npm run build",
     "build": "npm run server:build && npm run client:build",
