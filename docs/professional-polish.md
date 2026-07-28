@@ -108,3 +108,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact profile completeness priority
 
 - Profile completeness gives users a simple trust-building checklist without adding a heavy onboarding flow.
+
+## High-impact loading skeleton priority
+
+- Loading skeletons keep the dashboard feeling stable while requests, notifications, KYC, health, and wallet transactions load.
