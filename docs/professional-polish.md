@@ -16,3 +16,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 
 - Generic action labels are being replaced with user-facing language tied to the workflow.
 - Payment and wallet actions now explain whether they refresh confirmations, check activity, or create requests.
+
+## Friendly timestamps
+
+- Payment cards and transaction rows now show relative labels such as `2 hr ago`, `3 days ago`, or a short date.
