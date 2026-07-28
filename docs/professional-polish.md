@@ -80,3 +80,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Profile completeness
 
 - The Profile screen now shows a percentage card and prompts the user to complete phone and KYC trust details.
+
+## System health card
+
+- Settings surfaces wallet, email, push, SMS, security, and notification health so operators can see system readiness.
