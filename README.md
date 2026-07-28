@@ -181,6 +181,15 @@ The notification panel is available from every authenticated screen. It displays
 
 The interface balances dark forest-green product areas with a rich Beam-pink header and deeper dusty-pink surfaces across navigation, cards, authentication, forms, notifications, and dialogs.
 
+Latest professional polish update:
+
+- Toast feedback for saves, copies, wallet actions, request creation, KYC, and compliance actions
+- Search and sort controls on the Payments screen
+- Clickable transaction rows with a transaction detail drawer and copyable wallet transaction IDs
+- User menu with Profile, Settings, Wallet, and Sign out actions
+- Profile completeness indicator and local notification preference preview
+- Loading skeletons, friendly relative timestamps, and a small application footer
+
 ## Payment Lifecycle
 
 ```text
