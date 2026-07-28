@@ -24,3 +24,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Status badges
 
 - Payment lifecycle states use distinct polished badge colors for pending, funded, released, disputed, failed, and expired work.
+
+## Dashboard activity feed
+
+- Existing in-app notifications are positioned as the professional activity feed for payment, escrow, dispute, delivery, KYC, and confirmation events.
