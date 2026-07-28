@@ -36,3 +36,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Form guidance
 
 - Payment, wallet, profile, and KYC forms include helper text or placeholders that explain what the user should enter.
+
+## Confirmation dialogs
+
+- Sensitive actions ask for confirmation before approval, escrow funding, release, direct send, dispute, or sign-out workflows proceed.
