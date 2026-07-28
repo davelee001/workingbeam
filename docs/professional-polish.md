@@ -64,3 +64,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Transaction detail view
 
 - Clicking a transaction opens a detail drawer with amount, status, wallet transaction ID, date, and related request context.
+
+## Copy buttons
+
+- Payment links, wallet/deposit addresses, and wallet transaction IDs can be copied with immediate toast feedback.
