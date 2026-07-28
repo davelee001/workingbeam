@@ -52,3 +52,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Footer polish
 
 - The authenticated app footer now exposes product status, version context, and a quick route to system settings.
+
+## Skeleton loaders
+
+- Payment areas render skeleton cards during the first dashboard load to avoid sudden layout jumps.
