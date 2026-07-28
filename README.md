@@ -189,6 +189,7 @@ Latest professional polish update:
 - User menu with Profile, Settings, Wallet, and Sign out actions
 - Profile completeness indicator and local notification preference preview
 - Loading skeletons, friendly relative timestamps, and a small application footer
+- The 31-commit professional polish batch is tracked item-by-item in `docs/professional-polish.md`
 
 ## Payment Lifecycle
 
