@@ -493,6 +493,6 @@ The repository is a functional MVP, not a production custody deployment. Before 
 
 MIT
 
-**Status:** Working local MVP with role-based screens, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
+**Status:** Working local MVP with role-based screens, populated demo workspace data, complete mock escrow lifecycle, and mock or HTTP Beam Wallet API modes.
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-07-28
