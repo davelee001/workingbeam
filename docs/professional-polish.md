@@ -92,3 +92,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact badge priority
 
 - Status badges are prioritized because lifecycle clarity is central to escrow trust.
+
+## High-impact user menu priority
+
+- The user menu reduces header clutter while keeping account navigation one click away.
