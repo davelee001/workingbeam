@@ -96,3 +96,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact user menu priority
 
 - The user menu reduces header clutter while keeping account navigation one click away.
+
+## High-impact search priority
+
+- Search and sorting are prioritized because populated demo workspaces need fast filtering once data is no longer empty.
