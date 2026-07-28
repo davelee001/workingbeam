@@ -348,6 +348,23 @@ npm run dev
 
 The client must exist before a freelancer can address a payment request to the client's email. For a local end-to-end test, register a client account, sign out, register a freelancer account, and create a request using the client's email.
 
+### Populated Demo Workspace
+
+For a professional-looking local workspace with existing users, payment requests, transactions, notifications, KYC records, and contact activity, load the tracked demo seed:
+
+```bash
+npm run demo:no-install
+```
+
+Use `npm run demo` when dependencies still need to be installed first. Both commands copy `server/demo/workingbeam.demo.json` into the ignored local database file at `server/data/workingbeam.json`, then start the backend and frontend in development mode.
+
+Demo sign-ins use password `Password123!`:
+
+- Freelancer: `adeng@mail.com`
+- Client: `bol.client@mail.com`
+
+The local database file and `.env` remain ignored so private runtime data and Supabase credentials are not committed.
+
 ### Local Workflow Walkthrough
 
 1. Register a **client** with a Beam wallet address or development token.
