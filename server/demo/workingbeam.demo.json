@@ -1,0 +1,406 @@
+{
+  "users": [
+    {
+      "id": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "name": "Amina Deng",
+      "email": "adeng@mail.com",
+      "passwordHash": "11111111111111111111111111111111:3417daca86fd9894d0a36b0aba3f011cb814e5099c8a9c0485164458418b6a2a2ec1238ceab0befb3b30a21426746e5fb4966747cfb786f872e97e323820fd0e",
+      "role": "freelancer",
+      "walletAddress": "beam-amina-deng-freelancer-wallet-001",
+      "phone": "+211 920 114 408",
+      "pushTokens": [
+        "demo-browser-token-amina-000000001"
+      ],
+      "complianceStatus": "pending_review",
+      "emailVerifiedAt": "2026-07-11T09:12:00.000Z",
+      "createdAt": "2026-07-10T08:30:00.000Z"
+    },
+    {
+      "id": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "name": "Bol Akol",
+      "email": "bol.client@mail.com",
+      "passwordHash": "22222222222222222222222222222222:d9d1ef87802e6e955a6071f89dd3952f419a43b1e5b8d1f75c2ac094a80db23dd61b480f40283246a2bd73791bef9f64c58eb3a68696b421195d628b15976dcc",
+      "role": "client",
+      "walletAddress": "beam-bol-akol-client-wallet-001",
+      "phone": "+211 911 208 782",
+      "pushTokens": [
+        "demo-browser-token-bol-000000001"
+      ],
+      "complianceStatus": "approved",
+      "emailVerifiedAt": "2026-07-11T10:15:00.000Z",
+      "createdAt": "2026-07-10T09:00:00.000Z"
+    },
+    {
+      "id": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "name": "Nyandeng Studio",
+      "email": "accounts@nyandeng.studio",
+      "passwordHash": "22222222222222222222222222222222:d9d1ef87802e6e955a6071f89dd3952f419a43b1e5b8d1f75c2ac094a80db23dd61b480f40283246a2bd73791bef9f64c58eb3a68696b421195d628b15976dcc",
+      "role": "client",
+      "walletAddress": "beam-nyandeng-studio-client-wallet-001",
+      "phone": "+211 922 451 119",
+      "pushTokens": [],
+      "complianceStatus": "pending_review",
+      "emailVerifiedAt": "2026-07-14T12:45:00.000Z",
+      "createdAt": "2026-07-12T11:22:00.000Z"
+    }
+  ],
+  "emailVerifications": [],
+  "sessions": [],
+  "paymentRequests": [
+    {
+      "id": "pay-landing-redesign-001",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "Fintech landing page redesign",
+      "description": "Homepage refresh, feature blocks, pricing section, responsive polish, and deployment-ready handoff.",
+      "amountBeam": 4800,
+      "currency": "USD",
+      "status": "released",
+      "dueDate": "2026-07-20",
+      "workNote": "Final Figma handoff and production assets delivered through the shared project board.",
+      "createdAt": "2026-07-08T09:12:00.000Z",
+      "updatedAt": "2026-07-22T14:20:00.000Z"
+    },
+    {
+      "id": "pay-wallet-audit-002",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "Wallet integration security review",
+      "description": "Review wallet validation, escrow release states, and transaction confirmation edge cases.",
+      "amountBeam": 2600,
+      "currency": "EUR",
+      "status": "work_submitted",
+      "dueDate": "2026-07-30",
+      "workNote": "Audit report uploaded with recommendations for production wallet ACLs and alert thresholds.",
+      "createdAt": "2026-07-18T10:40:00.000Z",
+      "updatedAt": "2026-07-27T16:25:00.000Z"
+    },
+    {
+      "id": "pay-mobile-dashboard-003",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "title": "Mobile dashboard interaction polish",
+      "description": "Improve mobile navigation, summary cards, profile actions, and notification drawers.",
+      "amountBeam": 1850000,
+      "currency": "SSP",
+      "status": "funded",
+      "dueDate": "2026-08-04",
+      "createdAt": "2026-07-24T08:05:00.000Z",
+      "updatedAt": "2026-07-25T13:10:00.000Z"
+    },
+    {
+      "id": "pay-brand-assets-004",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "title": "Brand asset pack",
+      "description": "Logo lockups, color system, export templates, and launch social banners.",
+      "amountBeam": 3200,
+      "currency": "GBP",
+      "status": "approved",
+      "dueDate": "2026-08-09",
+      "createdAt": "2026-07-26T12:15:00.000Z",
+      "updatedAt": "2026-07-26T15:35:00.000Z"
+    },
+    {
+      "id": "pay-analytics-005",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "Spending analytics prototype",
+      "description": "Interactive chart prototype showing pending requests, completed releases, and client spend trend.",
+      "amountBeam": 940000,
+      "currency": "UGX",
+      "status": "release_pending",
+      "dueDate": "2026-07-27",
+      "workNote": "Prototype deployed for review with sample data and chart annotations.",
+      "createdAt": "2026-07-19T07:50:00.000Z",
+      "updatedAt": "2026-07-28T09:30:00.000Z"
+    },
+    {
+      "id": "pay-research-006",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "title": "Market research sprint",
+      "description": "Competitor scan and product positioning notes for cross-border freelance payments.",
+      "amountBeam": 1550,
+      "currency": "USD",
+      "status": "disputed",
+      "dueDate": "2026-07-18",
+      "workNote": "Research memo delivered; client requested deeper regional pricing evidence.",
+      "disputeReason": "Client requested additional source detail before release.",
+      "createdAt": "2026-07-13T13:20:00.000Z",
+      "updatedAt": "2026-07-21T11:15:00.000Z"
+    },
+    {
+      "id": "pay-qr-kit-007",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "QR payment kit",
+      "description": "Payment link templates, receipt copy, and QA notes for invoice sharing.",
+      "amountBeam": 720,
+      "currency": "USD",
+      "status": "failed",
+      "dueDate": "2026-07-25",
+      "createdAt": "2026-07-20T15:00:00.000Z",
+      "updatedAt": "2026-07-24T18:40:00.000Z"
+    },
+    {
+      "id": "pay-expired-008",
+      "freelancerId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "clientId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "title": "Legacy copy cleanup",
+      "description": "Short cleanup task that was not approved before the due date.",
+      "amountBeam": 520000,
+      "currency": "KSH",
+      "status": "expired",
+      "dueDate": "2026-07-15",
+      "createdAt": "2026-07-10T10:00:00.000Z",
+      "updatedAt": "2026-07-16T00:05:00.000Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "txn-fund-landing-001",
+      "paymentRequestId": "pay-landing-redesign-001",
+      "walletTransactionId": "mock-7d0f1c75b8534cb8a77175c9cfe8d2a1",
+      "kind": "funding",
+      "amountBeam": 4800,
+      "fromUserId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-08T10:00:00.000Z",
+      "confirmedAt": "2026-07-08T10:05:00.000Z"
+    },
+    {
+      "id": "txn-release-landing-002",
+      "paymentRequestId": "pay-landing-redesign-001",
+      "walletTransactionId": "mock-10790a5f0ab04f439f86d2f37a5c47a9",
+      "kind": "release",
+      "amountBeam": 4800,
+      "toUserId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-22T14:00:00.000Z",
+      "confirmedAt": "2026-07-22T14:20:00.000Z"
+    },
+    {
+      "id": "txn-fund-wallet-003",
+      "paymentRequestId": "pay-wallet-audit-002",
+      "walletTransactionId": "mock-45bc9412a3f546b2951c9905b4fa8a76",
+      "kind": "funding",
+      "amountBeam": 2600,
+      "fromUserId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-18T11:00:00.000Z",
+      "confirmedAt": "2026-07-18T11:03:00.000Z"
+    },
+    {
+      "id": "txn-fund-mobile-004",
+      "paymentRequestId": "pay-mobile-dashboard-003",
+      "walletTransactionId": "mock-29362eb10f194e11ae37bb90bdf00c42",
+      "kind": "funding",
+      "amountBeam": 1850000,
+      "fromUserId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-25T12:45:00.000Z",
+      "confirmedAt": "2026-07-25T13:10:00.000Z"
+    },
+    {
+      "id": "txn-fund-analytics-005",
+      "paymentRequestId": "pay-analytics-005",
+      "walletTransactionId": "mock-88723934e6244d1d9692ef42c2a748ce",
+      "kind": "funding",
+      "amountBeam": 940000,
+      "fromUserId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-19T09:00:00.000Z",
+      "confirmedAt": "2026-07-19T09:02:00.000Z"
+    },
+    {
+      "id": "txn-release-analytics-006",
+      "paymentRequestId": "pay-analytics-005",
+      "walletTransactionId": "mock-5f5d2a88a6684b1e81ed60381c741dfa",
+      "kind": "release",
+      "amountBeam": 940000,
+      "toUserId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "status": "pending",
+      "rawStatus": "mock-pending",
+      "createdAt": "2026-07-28T09:30:00.000Z"
+    },
+    {
+      "id": "txn-fund-research-007",
+      "paymentRequestId": "pay-research-006",
+      "walletTransactionId": "mock-68107b81c73242ada111a54040937e3c",
+      "kind": "funding",
+      "amountBeam": 1550,
+      "fromUserId": "facd2793-6ef3-4425-b89a-a5f3b46f6ce0",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-13T16:00:00.000Z",
+      "confirmedAt": "2026-07-13T16:05:00.000Z"
+    },
+    {
+      "id": "txn-failed-qr-008",
+      "paymentRequestId": "pay-qr-kit-007",
+      "walletTransactionId": "mock-90ebce8262a54ec7a7a63ef4fba527ab",
+      "kind": "funding",
+      "amountBeam": 720,
+      "fromUserId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "status": "failed",
+      "rawStatus": "mock-failed",
+      "createdAt": "2026-07-24T18:20:00.000Z"
+    },
+    {
+      "id": "txn-direct-send-009",
+      "walletTransactionId": "mock-c8434316438645fcaa580535004d35d0",
+      "kind": "send",
+      "amountBeam": 240,
+      "fromUserId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "status": "confirmed",
+      "rawStatus": "mock-completed",
+      "createdAt": "2026-07-23T12:10:00.000Z",
+      "confirmedAt": "2026-07-23T12:12:00.000Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "note-001",
+      "userId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "title": "Payment released",
+      "message": "4,800 BEAM was released for Fintech landing page redesign.",
+      "channels": ["in_app", "email", "push"],
+      "read": false,
+      "createdAt": "2026-07-22T14:20:00.000Z"
+    },
+    {
+      "id": "note-002",
+      "userId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "title": "Work submitted",
+      "message": "Wallet integration security review is waiting for client release.",
+      "channels": ["in_app", "email"],
+      "read": false,
+      "createdAt": "2026-07-27T16:25:00.000Z"
+    },
+    {
+      "id": "note-003",
+      "userId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "title": "Escrow funded",
+      "message": "Mobile dashboard interaction polish is protected in escrow.",
+      "channels": ["in_app", "email", "push"],
+      "read": true,
+      "createdAt": "2026-07-25T13:10:00.000Z"
+    },
+    {
+      "id": "note-004",
+      "userId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "title": "Payment disputed",
+      "message": "Market research sprint needs clarification before funds can be released.",
+      "channels": ["in_app", "email", "sms"],
+      "read": false,
+      "createdAt": "2026-07-21T11:15:00.000Z"
+    },
+    {
+      "id": "note-005",
+      "userId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "Release pending",
+      "message": "Spending analytics prototype release is awaiting Beam confirmation.",
+      "channels": ["in_app", "email", "push"],
+      "read": false,
+      "createdAt": "2026-07-28T09:30:00.000Z"
+    },
+    {
+      "id": "note-006",
+      "userId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "title": "Funding failed",
+      "message": "QR payment kit funding failed. Review wallet details before retrying.",
+      "channels": ["in_app", "email", "push"],
+      "read": false,
+      "createdAt": "2026-07-24T18:40:00.000Z"
+    }
+  ],
+  "auditEvents": [
+    {
+      "id": "audit-001",
+      "actorId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "action": "auth.register",
+      "entityType": "user",
+      "entityId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "metadata": {"role": "freelancer", "emailVerification": "paused", "walletType": "development"},
+      "createdAt": "2026-07-10T08:30:00.000Z"
+    },
+    {
+      "id": "audit-002",
+      "actorId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "action": "auth.register",
+      "entityType": "user",
+      "entityId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "metadata": {"role": "client", "emailVerification": "paused", "walletType": "development"},
+      "createdAt": "2026-07-10T09:00:00.000Z"
+    },
+    {
+      "id": "audit-003",
+      "actorId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "action": "kyc.submit",
+      "entityType": "kyc_submission",
+      "entityId": "kyc-amina-001",
+      "metadata": {"country": "South Sudan", "documentType": "national_id"},
+      "createdAt": "2026-07-27T09:25:00.000Z"
+    },
+    {
+      "id": "audit-004",
+      "actorId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "action": "payment.create",
+      "entityType": "payment_request",
+      "entityId": "pay-brand-assets-004",
+      "createdAt": "2026-07-26T12:15:00.000Z"
+    },
+    {
+      "id": "audit-005",
+      "actorId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "action": "transaction.refresh",
+      "entityType": "transaction",
+      "entityId": "txn-release-analytics-006",
+      "metadata": {"status": "pending"},
+      "createdAt": "2026-07-28T09:30:00.000Z"
+    }
+  ],
+  "kycSubmissions": [
+    {
+      "id": "kyc-amina-001",
+      "userId": "0e6e2f56-3014-4b80-9e92-fac2881bb190",
+      "legalName": "Amina Deng",
+      "country": "South Sudan",
+      "documentType": "national_id",
+      "documentLast4": "4408",
+      "address": "Hai Cinema, Juba, South Sudan",
+      "status": "pending_review",
+      "submittedAt": "2026-07-27T09:25:00.000Z"
+    },
+    {
+      "id": "kyc-bol-001",
+      "userId": "814bd27b-0a75-4f53-a49a-1d16723ef841",
+      "legalName": "Bol Akol",
+      "country": "South Sudan",
+      "documentType": "business_registration",
+      "documentLast4": "8821",
+      "address": "Custom Market Road, Juba, South Sudan",
+      "status": "approved",
+      "submittedAt": "2026-07-15T10:30:00.000Z",
+      "reviewedAt": "2026-07-16T14:00:00.000Z"
+    }
+  ],
+  "contactInquiries": [
+    {
+      "id": "contact-001",
+      "name": "Deng Operations",
+      "email": "ops@example.com",
+      "company": "Deng Operations",
+      "subject": "integration",
+      "message": "We are evaluating WorkingBeam for milestone payments and would like a wallet integration demo.",
+      "status": "new",
+      "createdAt": "2026-07-26T10:30:00.000Z"
+    }
+  ]
+}
