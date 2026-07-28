@@ -56,3 +56,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Skeleton loaders
 
 - Payment areas render skeleton cards during the first dashboard load to avoid sudden layout jumps.
+
+## Subtle animations
+
+- Buttons, cards, menus, skeleton shimmer, and transaction rows use restrained hover or loading motion.
