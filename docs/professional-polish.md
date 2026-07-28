@@ -32,3 +32,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Trust indicators
 
 - Wallet mode, email verification, private transaction mode, escrow protection, and compliance state are surfaced as trust signals.
+
+## Form guidance
+
+- Payment, wallet, profile, and KYC forms include helper text or placeholders that explain what the user should enter.
