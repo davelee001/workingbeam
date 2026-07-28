@@ -76,3 +76,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Search and sorting
 
 - Payments can be searched by request, person, status, or currency and sorted by date, amount, or due date.
+
+## Profile completeness
+
+- The Profile screen now shows a percentage card and prompts the user to complete phone and KYC trust details.
