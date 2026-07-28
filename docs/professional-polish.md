@@ -40,3 +40,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Confirmation dialogs
 
 - Sensitive actions ask for confirmation before approval, escrow funding, release, direct send, dispute, or sign-out workflows proceed.
+
+## Toast notifications
+
+- Saves, copy actions, request creation, wallet sends, generated wallets, KYC submission, and compliance requests now return immediate feedback.
