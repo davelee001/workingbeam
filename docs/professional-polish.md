@@ -44,3 +44,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Toast notifications
 
 - Saves, copy actions, request creation, wallet sends, generated wallets, KYC submission, and compliance requests now return immediate feedback.
+
+## User menu
+
+- The header profile area opens a menu with Profile, Settings, Wallet, and Sign out actions.
