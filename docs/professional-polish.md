@@ -48,3 +48,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## User menu
 
 - The header profile area opens a menu with Profile, Settings, Wallet, and Sign out actions.
+
+## Footer polish
+
+- The authenticated app footer now exposes product status, version context, and a quick route to system settings.
