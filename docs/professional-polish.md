@@ -84,3 +84,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## System health card
 
 - Settings surfaces wallet, email, push, SMS, security, and notification health so operators can see system readiness.
+
+## High-impact toast priority
+
+- Toast feedback is treated as a high-impact polish item because users should never wonder whether a save or payment action worked.
