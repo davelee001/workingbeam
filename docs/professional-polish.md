@@ -72,3 +72,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Notification preferences
 
 - Settings includes local Email, Push, SMS, and In-app preference toggles so users can see expected delivery channels.
+
+## Search and sorting
+
+- Payments can be searched by request, person, status, or currency and sorted by date, amount, or due date.
