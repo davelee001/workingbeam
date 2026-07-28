@@ -104,3 +104,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact transaction drawer priority
 
 - The transaction drawer turns wallet rows into inspectable records instead of passive table data.
+
+## High-impact profile completeness priority
+
+- Profile completeness gives users a simple trust-building checklist without adding a heavy onboarding flow.
