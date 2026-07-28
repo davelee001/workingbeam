@@ -11,3 +11,8 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 
 - Counterparty cards use initials so freelancer/client records feel less anonymous.
 - The header, profile summary, and payment cards share the same initials treatment.
+
+## Microcopy
+
+- Generic action labels are being replaced with user-facing language tied to the workflow.
+- Payment and wallet actions now explain whether they refresh confirmations, check activity, or create requests.
