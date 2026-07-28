@@ -68,3 +68,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Copy buttons
 
 - Payment links, wallet/deposit addresses, and wallet transaction IDs can be copied with immediate toast feedback.
+
+## Notification preferences
+
+- Settings includes local Email, Push, SMS, and In-app preference toggles so users can see expected delivery channels.
