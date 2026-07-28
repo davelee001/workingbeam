@@ -100,3 +100,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## High-impact search priority
 
 - Search and sorting are prioritized because populated demo workspaces need fast filtering once data is no longer empty.
+
+## High-impact transaction drawer priority
+
+- The transaction drawer turns wallet rows into inspectable records instead of passive table data.
