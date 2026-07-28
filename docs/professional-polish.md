@@ -28,3 +28,7 @@ This file tracks the small professional-fintech improvements applied to WorkingB
 ## Dashboard activity feed
 
 - Existing in-app notifications are positioned as the professional activity feed for payment, escrow, dispute, delivery, KYC, and confirmation events.
+
+## Trust indicators
+
+- Wallet mode, email verification, private transaction mode, escrow protection, and compliance state are surfaced as trust signals.
