@@ -21,3 +21,7 @@ This file records the latest requested GitHub commit batch for WorkingBeam.
 ## Batch item 5
 
 - Kept generated build output out of the commit batch.
+
+## Batch item 6
+
+- Kept the local JSON runtime database out of the commit batch.
