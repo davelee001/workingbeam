@@ -481,15 +481,21 @@
 }
 
 .steps-grid article:hover {
-  background: linear-gradient(145deg, #e8f8ef, #d7f0e3);
-  border-color: rgba(12, 106, 75, 0.42);
-  box-shadow: 0 22px 52px rgba(12, 106, 75, 0.16);
+  color: #f3fbf7;
+  background: linear-gradient(145deg, #0b3a2d, #0f5a42);
+  border-color: rgba(141, 229, 188, 0.4);
+  box-shadow: 0 24px 60px rgba(10, 51, 40, 0.26);
 }
 
 .steps-grid article:hover span {
-  color: #ffffff;
-  background: #0c6a4b;
-  border-color: #0c6a4b;
+  color: #0b3a2d;
+  background: #ffd9e5;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.steps-grid article:hover h3,
+.steps-grid article:hover p {
+  color: #f3fbf7;
 }
 
 .steps-grid article:nth-child(3):hover {
