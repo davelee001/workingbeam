@@ -82,6 +82,8 @@ Screenshot image files should be stored in `docs/screenshots/` so GitHub can ren
 
 Mobile users get a bottom navigation bar for Home, Payments, Requests, Notifications, and Profile.
 
+The public mobile Menu button includes a three-line hamburger icon before the word Menu.
+
 Freelancers also get a floating Request Payment action that opens the payment request form in one tap.
 
 The mobile Overview prioritizes:
