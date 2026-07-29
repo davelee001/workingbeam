@@ -559,6 +559,11 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
       {!loaded ? <SkeletonCards /> : items.length === 0 ? <div className="empty-state"><div>↗</div><h3>{payments.length === 0 ? 'No payment requests yet' : 'No requests match this view'}</h3><p>{payments.length === 0 ? (currentUser.role === 'freelancer' ? 'Create your first request after agreeing on work with a client.' : 'Requests sent to your account will appear here.') : 'Try another status, search term, or sort order to see more activity.'}</p>{payments.length === 0 && currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>Create request</button>}</div> : items.map((payment) => <PaymentCard key={payment.id} payment={payment} user={currentUser} onToast={toast} onTransactionSelect={(transaction, linkedPayment) => setSelectedTransaction({ transaction, payment: linkedPayment })} onAction={(action, item) => { if (!busy) void act(action, item); }} />)}
     </section>
   );
+  const openRequestPayment = () => {
+    setScreen('payments');
+    setShowCreate(true);
+  };
+  const mobileRequestsScreen = currentUser.role === 'client' ? 'outstanding' : 'payments';
 
   return (
     <div className="dashboard-shell">
@@ -573,6 +578,14 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
         </nav>
         <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><div className="user-menu-wrap"><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setUserMenuOpen(!userMenuOpen)}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button>{userMenuOpen && <div className="user-menu"><button onClick={() => { setScreen('profile'); setUserMenuOpen(false); }}>Profile</button><button onClick={() => { setScreen('settings'); setUserMenuOpen(false); }}>Settings</button><button onClick={() => { setScreen('wallet'); setUserMenuOpen(false); }}>Wallet</button><button onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}>Sign out</button></div>}</div></div>
       </header>
+      <nav className="mobile-bottom-nav" aria-label="Mobile workspace navigation">
+        <button className={screen === 'overview' ? 'active' : ''} onClick={() => setScreen('overview')}><span>🏠</span>Home</button>
+        <button className={screen === 'payments' ? 'active' : ''} onClick={() => setScreen('payments')}><span>💰</span>Payments</button>
+        <button className={screen === mobileRequestsScreen ? 'active' : ''} onClick={() => setScreen(mobileRequestsScreen)}><span>📄</span>Requests</button>
+        <button className={showNotifications ? 'active' : ''} onClick={() => setShowNotifications(!showNotifications)}><span>🔔</span>Notifications{unread > 0 && <b>{unread}</b>}</button>
+        <button className={screen === 'profile' ? 'active' : ''} onClick={() => setScreen('profile')}><span>👤</span>Profile</button>
+      </nav>
+      {currentUser.role === 'freelancer' && <button className="mobile-request-fab" onClick={openRequestPayment} aria-label="Request payment"><strong>+</strong><span>Request Payment</span></button>}
       {showNotifications && <aside className="notifications"><div className="aside-title"><h3>Notifications</h3><button onClick={() => setShowNotifications(false)}>×</button></div>{notifications.length === 0 ? <p className="empty">Nothing new yet.</p> : notifications.map((item) => <div className={item.read ? 'notice read' : 'notice'} key={item.id}><strong>{item.title}</strong><p>{item.message}</p><div className="notice-channels">{(item.channels ?? ['in_app']).map((channel) => <span key={channel}>{notificationChannelLabel(channel)}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</aside>}
       <main className="dashboard">
         {error && <div className="error-banner dashboard-error">{error}</div>}
