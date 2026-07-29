@@ -13,3 +13,7 @@ This file records the latest requested GitHub commit batch for WorkingBeam.
 ## Batch item 3
 
 - Kept runtime logs out of the commit batch.
+
+## Batch item 4
+
+- Kept dependency folders out of the commit batch.
