@@ -79,9 +79,9 @@ interface ToastMessage {
 }
 
 const statusLabels: Record<PaymentStatus, string> = {
-  pending: 'Awaiting approval', approved: 'Ready to fund', funding_pending: 'Funding confirmation',
-  funded: 'Escrow funded', work_submitted: 'Work submitted', release_pending: 'Release confirmation',
-  released: 'Paid', disputed: 'Disputed', failed: 'Failed', expired: 'Expired', cancelled: 'Cancelled',
+  pending: '🟡 Pending', approved: 'Ready to fund', funding_pending: 'Funding confirmation',
+  funded: '🔵 Funded', work_submitted: 'Work submitted', release_pending: 'Release confirmation',
+  released: '🟢 Released', disputed: '🔴 Disputed', failed: 'Failed', expired: 'Expired', cancelled: 'Cancelled',
 };
 const paymentCurrencies: PaymentCurrency[] = ['USD', 'EUR', 'GBP', 'SSP', 'UGX', 'KSH', 'TSH', 'SDG'];
 
