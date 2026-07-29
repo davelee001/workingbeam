@@ -1,5 +1,7 @@
 # WorkingBeam
 
+[![CI](https://github.com/davelee001/workingbeam/actions/workflows/ci.yml/badge.svg)](https://github.com/davelee001/workingbeam/actions/workflows/ci.yml)
+
 WorkingBeam is a privacy-focused freelancer payment and escrow platform
 built around the Beam blockchain.
 
