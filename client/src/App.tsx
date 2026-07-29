@@ -98,7 +98,7 @@ function paymentLink(payment: PaymentRequest): string {
 }
 
 function qrCodeUrl(link: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=156x156&margin=10&data=${encodeURIComponent(link)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(link)}`;
 }
 
 function notificationChannelLabel(channel: 'in_app' | 'email' | 'sms' | 'push'): string {
@@ -303,6 +303,11 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
     await navigator.clipboard?.writeText(value);
     onToast(`${label} copied`);
   };
+  const sharePayment = async () => {
+    const shareData = { title: payment.title, text: `Payment request for ${paymentAmount(payment)}`, url: link };
+    if (navigator.share) await navigator.share(shareData);
+    else await copyText(link, 'Payment link');
+  };
   return (
     <article className="payment-card">
       <div className="payment-top">
@@ -313,15 +318,20 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
       <div className="card-meta"><span>Created {friendlyTime(payment.createdAt)}</span>{payment.dueDate && <span className={payment.status === 'expired' ? 'overdue' : ''}>Due {friendlyTime(`${payment.dueDate}T00:00:00`)}</span>}</div>
       <div className="counterparty"><div className="avatar">{(user.role === 'client' ? payment.freelancer.name : payment.client.name).slice(0, 1)}</div><div><small>{user.role === 'client' ? 'Freelancer' : 'Client'}</small><strong>{user.role === 'client' ? payment.freelancer.name : payment.client.name}</strong></div></div>
       <div className="payment-share">
+        <div className="qr-focus">
+          <small>QR Code</small>
+          <img src={qrCodeUrl(link)} alt={`QR code for ${payment.title} payment link`} loading="lazy" />
+          <strong>Amount: <span>{paymentAmount(payment)}</span></strong>
+        </div>
         <div>
           <small>Generated payment link</small>
           <code>{link}</code>
           <div className="share-actions">
-            <button className="secondary" aria-label={`Copy payment link for ${payment.title}`} onClick={() => void copyText(link, 'Payment link')}>Copy link</button>
+            <button className="primary share-button" aria-label={`Share payment request for ${payment.title}`} onClick={() => void sharePayment()}>Share</button>
+            <button className="secondary" aria-label={`Copy payment link for ${payment.title}`} onClick={() => void copyText(link, 'Payment link')}>Copy Link</button>
             <a className="secondary link-button" href={link}>Open</a>
           </div>
         </div>
-        <img src={qrCodeUrl(link)} alt={`QR code for ${payment.title} payment link`} loading="lazy" />
       </div>
       {payment.workNote && <div className="detail-note"><strong>Delivery</strong><p>{payment.workNote}</p></div>}
       {payment.disputeReason && <div className="detail-note danger"><strong>Dispute</strong><p>{payment.disputeReason}</p></div>}
