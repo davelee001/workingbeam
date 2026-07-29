@@ -94,6 +94,7 @@ The mobile Overview prioritizes:
 Secondary detail remains available through dedicated screens.
 
 Payment states use color-coded badges for Pending, Funded, Released, and Disputed.
+On mobile payment request cards, the QR code is the primary focus with amount, Share, and Copy Link actions.
 
 ## Priorities
 
