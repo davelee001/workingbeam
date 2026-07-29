@@ -27,6 +27,10 @@ built around the Beam blockchain.
 - Supabase PostgreSQL for hosted persistence
 - Beam Wallet API using JSON-RPC 2.0
 
+## Continuous integration
+
+Every push and pull request runs the Node.js 20 CI workflow.
+
 ## Priorities
 
 - Protect wallet credentials and user data.
