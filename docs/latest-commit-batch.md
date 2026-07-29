@@ -45,3 +45,7 @@ This file records the latest requested GitHub commit batch for WorkingBeam.
 ## Batch item 11
 
 - Recorded that private credentials must be rotated if they are ever exposed outside local configuration.
+
+## Batch item 12
+
+- Recorded that docs-only batch commits are used only when there are no real source changes waiting.
