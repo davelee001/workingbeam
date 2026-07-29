@@ -109,13 +109,30 @@
 
 .public-menu-button {
   display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
   background: rgba(255, 255, 255, 0.58);
   border-radius: 8px;
   color: #0a4d38;
-  font-size: 22px;
-  width: 44px;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 13px;
   height: 44px;
+}
+
+.menu-lines {
+  display: grid;
+  gap: 4px;
+}
+
+.menu-lines i {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
 }
 
 .landing-hero {
@@ -727,7 +744,7 @@
   }
 
   .public-menu-button {
-    display: block;
+    display: inline-flex;
     justify-self: end;
   }
 
