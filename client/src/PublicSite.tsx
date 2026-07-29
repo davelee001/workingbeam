@@ -24,7 +24,7 @@ function SiteHeader({ path, onNavigate }: { path: PublicPath; onNavigate: (path:
   const go = (nextPath: string) => { setMenuOpen(false); onNavigate(nextPath); };
   return <header className="public-header">
     <PublicLink path="/" onNavigate={go} className="public-brand">Working<span>Beam</span></PublicLink>
-    <button className="public-menu-button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
+    <button className="public-menu-button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><span className="menu-lines" aria-hidden="true"><i /><i /><i /></span><span>Menu</span></button>
     <nav className={menuOpen ? 'public-nav open' : 'public-nav'} aria-label="Public navigation">
       {navigation.map((item) => <PublicLink key={item.path} path={item.path} currentPath={path} onNavigate={go}>{item.label}</PublicLink>)}
     </nav>
