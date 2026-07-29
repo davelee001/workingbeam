@@ -129,10 +129,12 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .payment-top { display:flex; justify-content:space-between; gap:15px; align-items:start; }
 .payment-top h3 { margin:11px 0 0; font:700 18px 'Manrope'; }
 .status { display:inline-block; border:1px solid #dbe3df; border-radius:20px; padding:5px 8px; color:#64736c; background:#edf2ef; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
-.status.funded,.status.released { color:#08764b; background:#e2f6eb; border-color:#c4e9d5; }
+.status.pending { color:#7a5700; background:#fff5cc; border-color:#ecd170; }
+.status.funded { color:#1d5f99; background:#e4f1ff; border-color:#a9d1f7; }
+.status.released { color:#08764b; background:#e2f6eb; border-color:#c4e9d5; }
 .status.work_submitted,.status.approved { color:#896611; background:#fff4d5; border-color:#f0dfa8; }
 .status.funding_pending,.status.release_pending { color:#326f9b; background:#e8f2fa; border-color:#c9dfef; }
-.status.disputed { color:#a23e44; background:#ffebed; border-color:#efc9cc; }
+.status.disputed { color:#a1222c; background:#ffe5e8; border-color:#efadb4; }
 .status.failed { color:#b1323d; background:#ffe4e8; border-color:#efb9c0; }
 .status.expired { color:#7b5261; background:#f6e5ec; border-color:#e3c4d0; }
 .amount { display:grid; text-align:right; }
