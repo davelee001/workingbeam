@@ -54,7 +54,7 @@ function LandingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
       <div className="landing-copy">
         <p className="public-eyebrow">Freelance payments on Beam</p>
         <h1>Work with confidence.<br /><span>Get paid privately.</span></h1>
-        <p>WorkingBeam gives freelancers and clients one clear path from payment request to escrow, delivery, and confirmed release.</p>
+        <p>WorkingBeam gives freelancers and clients one clear path from payment request to custodial escrow, delivery, and confirmed release.</p>
         <div className="landing-actions"><PublicLink path="/auth?mode=register" onNavigate={onNavigate} className="public-primary">Create your workspace</PublicLink><PublicLink path="/features" onNavigate={onNavigate} className="public-secondary">Explore features</PublicLink></div>
         <div className="landing-proof"><span>Role-aware workflows</span><span>Beam confirmations</span><span>Dispute records</span></div>
       </div>
@@ -76,7 +76,7 @@ function LandingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
       <div className="steps-grid">{[
         ['01','Request','The freelancer defines the work, amount, and due date.'],
         ['02','Approve','The client reviews the milestone before funds move.'],
-        ['03','Protect','The client funds escrow through the Beam wallet rail.'],
+        ['03','Protect','The client funds custodial escrow through the Beam wallet rail.'],
         ['04','Deliver','The freelancer submits the completed work and delivery note.'],
         ['05','Release','The client releases payment after reviewing delivery.'],
       ].map(([number,title,text]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
@@ -91,22 +91,22 @@ function LandingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
 
 function AboutPage() {
   return <>
-    <PageIntro eyebrow="About WorkingBeam" title="Freelance trust should be designed into the payment." description="WorkingBeam brings agreements, delivery, escrow, and Beam confirmation into one shared workflow for freelancers and clients." />
-    <section className="public-section about-story"><div><p className="public-eyebrow">Our purpose</p><h2>Make cross-border digital work feel accountable without making it intrusive.</h2></div><div><p>Independent work often depends on screenshots, scattered messages, and trust that payment will arrive after delivery. Clients face the opposite uncertainty: paying before they can verify the result.</p><p>WorkingBeam closes that gap with explicit milestones, protected funding, delivery records, role-based actions, and visible blockchain confirmation.</p></div></section>
+    <PageIntro eyebrow="About WorkingBeam" title="Freelance trust should be designed into the payment." description="WorkingBeam brings agreements, delivery, custodial escrow, and Beam confirmation into one shared workflow for freelancers and clients." />
+    <section className="public-section about-story"><div><p className="public-eyebrow">Our purpose</p><h2>Make cross-border digital work feel accountable without making it intrusive.</h2></div><div><p>Independent work often depends on screenshots, scattered messages, and trust that payment will arrive after delivery. Clients face the opposite uncertainty: paying before they can verify the result.</p><p>WorkingBeam closes that gap with explicit milestones, custodial protected funding, delivery records, role-based actions, and visible blockchain confirmation.</p></div></section>
     <section className="public-section values-section"><p className="public-eyebrow">What guides us</p><div className="values-grid">{[
       ['Clarity over complexity','Every payment state should tell both parties what happened and what comes next.'],
       ['Privacy with accountability','Use Beam as the payment rail while keeping business actions visible to the people involved.'],
       ['Protection for both roles','Freelancers need confidence in funding. Clients need control over approval and release.'],
       ['Security by construction','Validate actions, addresses, roles, and transitions on the server, not only in the interface.'],
     ].map(([title,text],index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div></section>
-    <section className="public-section about-architecture"><div><p className="public-eyebrow">The system</p><h2>A deliberate path from people to confirmation.</h2></div><div className="architecture-flow"><span>Freelancer + Client</span><i>-&gt;</i><span>WorkingBeam workspace</span><i>-&gt;</i><span>Payment request + escrow</span><i>-&gt;</i><span>Beam Wallet API</span><i>-&gt;</i><span>On-chain confirmation</span></div></section>
+    <section className="public-section about-architecture"><div><p className="public-eyebrow">The system</p><h2>A deliberate path from people to confirmation.</h2></div><div className="architecture-flow"><span>Freelancer + Client</span><i>-&gt;</i><span>WorkingBeam workspace</span><i>-&gt;</i><span>Payment request + custodial escrow</span><i>-&gt;</i><span>Beam Wallet API</span><i>-&gt;</i><span>On-chain confirmation</span></div></section>
   </>;
 }
 
 function FeaturesPage() {
   const features = [
     ['01','Payment requests','Define the title, scope, BEAM amount, client, and due date in a structured milestone.'],
-    ['02','Protected escrow','Move approved funds into a visible protected state before work is delivered.'],
+    ['02','Custodial escrow','Move approved funds into a visible protected custodial state before work is delivered.'],
     ['03','Delivery workflow','Attach a delivery note or work link before the client makes a release decision.'],
     ['04','Beam confirmation','Submit transfers through the Wallet API and track pending, confirmed, or failed states.'],
     ['!','Dispute records','Let either party open a dispute while protected funds are held, with a recorded reason.'],
@@ -115,7 +115,7 @@ function FeaturesPage() {
     ['08','Audit history','Record authentication, payment, escrow, delivery, dispute, and confirmation events.'],
     ['09','Notifications','Surface request, approval, funding, delivery, release, dispute, and confirmation events in-app.'],
   ];
-  return <><PageIntro eyebrow="Product features" title="Everything needed for a protected freelance payment." description="A focused workflow for requesting, approving, protecting, delivering, releasing, and confirming work payments in BEAM." /><section className="public-section features-grid">{features.map(([icon,title,text]) => <article key={title}><span>{icon}</span><h3>{title}</h3><p>{text}</p></article>)}</section><section className="public-section feature-detail"><div><p className="public-eyebrow">State-aware by design</p><h2>The right action only appears at the right time.</h2><p>Server-side lifecycle rules prevent duplicate approvals, premature delivery, unauthorized release, and repeated funding.</p></div><div className="status-flow"><span>Pending</span><i>-&gt;</i><span>Approved</span><i>-&gt;</i><span>Funded</span><i>-&gt;</i><span>Delivered</span><i>-&gt;</i><span>Paid</span></div></section></>;
+  return <><PageIntro eyebrow="Product features" title="Everything needed for a protected freelance payment." description="A focused custodial escrow workflow for requesting, approving, protecting, delivering, releasing, and confirming work payments in BEAM." /><section className="public-section features-grid">{features.map(([icon,title,text]) => <article key={title}><span>{icon}</span><h3>{title}</h3><p>{text}</p></article>)}</section><section className="public-section feature-detail"><div><p className="public-eyebrow">State-aware by design</p><h2>The right action only appears at the right time.</h2><p>Server-side lifecycle rules prevent duplicate approvals, premature delivery, unauthorized release, and repeated funding.</p></div><div className="status-flow"><span>Pending</span><i>-&gt;</i><span>Approved</span><i>-&gt;</i><span>Funded</span><i>-&gt;</i><span>Delivered</span><i>-&gt;</i><span>Paid</span></div></section></>;
 }
 
 function PricingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -129,7 +129,7 @@ function PricingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
 function DocumentationPage() {
   return <><PageIntro eyebrow="Documentation" title="Understand the workflow before moving funds." description="A practical overview of accounts, payment states, wallet integration, configuration, and security boundaries." /><section className="public-section docs-layout"><aside><strong>On this page</strong><a href="#quick-start">Quick start</a><a href="#lifecycle">Payment lifecycle</a><a href="#wallet-api">Wallet API</a><a href="#security">Security</a></aside><div className="docs-content">
     <article id="quick-start"><p className="public-eyebrow">01 - Quick start</p><h2>Run the local workspace</h2><p>Install the root, server, and client dependencies; copy the server environment template; then start both services.</p><pre><code>npm install{`\n`}npm install --prefix server{`\n`}npm install --prefix client --legacy-peer-deps{`\n`}npm run dev</code></pre><p>The web app runs on port 3000 and the API runs on port 5000.</p></article>
-    <article id="lifecycle"><p className="public-eyebrow">02 - Payment lifecycle</p><h2>Every transition is explicit</h2><div className="docs-lifecycle"><span>pending</span><i>-&gt;</i><span>approved</span><i>-&gt;</i><span>funding_pending</span><i>-&gt;</i><span>funded</span><i>-&gt;</i><span>work_submitted</span><i>-&gt;</i><span>release_pending</span><i>-&gt;</i><span>released</span></div><p>Funded and submitted payments can enter dispute. Failed wallet operations return the request to its previous actionable state.</p></article>
+    <article id="lifecycle"><p className="public-eyebrow">02 - Payment lifecycle</p><h2>Every transition is explicit</h2><div className="docs-lifecycle"><span>pending</span><i>-&gt;</i><span>approved</span><i>-&gt;</i><span>funding_pending</span><i>-&gt;</i><span>funded</span><i>-&gt;</i><span>work_submitted</span><i>-&gt;</i><span>release_pending</span><i>-&gt;</i><span>released</span></div><p>Funded and submitted payments can enter dispute. Escrow is custodial, while Beam provides the payment and confirmation rail. Failed wallet operations return the request to its previous actionable state.</p></article>
     <article id="wallet-api"><p className="public-eyebrow">03 - Wallet API</p><h2>Mock locally, validate live</h2><p>Development uses an explicit mock wallet. Production requires a TLS-protected Beam Wallet API endpoint and ACL key. Receiving addresses and tokens are checked with <code>validate_address</code> before use.</p><pre><code>BEAM_WALLET_API_URL=https://wallet.internal/api/wallet{`\n`}BEAM_WALLET_API_KEY=your-acl-key{`\n`}BEAM_ESCROW_ADDRESS=your-valid-token</code></pre></article>
     <article id="security"><p className="public-eyebrow">04 - Security</p><h2>Trust the server, not browser state</h2><p>WorkingBeam hashes passwords with scrypt, stores only session-token hashes, checks ownership and roles on every protected action, rate-limits requests, validates wallet inputs, and records audit events.</p><div className="docs-callout"><strong>Never provide a Beam seed phrase.</strong><span>WorkingBeam only needs a receiving address or payment token. Wallet credentials remain server-side.</span></div></article>
   </div></section></>;
