@@ -3,6 +3,7 @@
   background:
     linear-gradient(180deg, rgba(255, 230, 239, 0.96), rgba(251, 240, 244, 0.98) 34%, rgba(246, 249, 244, 0.98));
   color: #07231b;
+  -webkit-font-smoothing: antialiased;
 }
 
 .public-site a {
@@ -17,17 +18,19 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 24px;
-  padding: 18px 52px;
-  background: #f4b9cc;
-  border-bottom: 1px solid rgba(92, 35, 55, 0.16);
-  box-shadow: 0 18px 40px rgba(83, 26, 48, 0.08);
+  gap: 28px;
+  padding: 16px 52px;
+  background: rgba(244, 185, 204, 0.95);
+  border-bottom: 1px solid rgba(92, 35, 55, 0.12);
+  box-shadow: 0 4px 20px rgba(83, 26, 48, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .public-brand {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: -0.5px;
   color: #ffffff;
 }
 
@@ -44,21 +47,30 @@
 
 .public-nav a,
 .public-signin {
-  padding: 10px 13px;
-  border-radius: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
   color: #116143;
   font-weight: 800;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.public-nav a:hover,
+.public-signin:hover {
+  background: rgba(255, 255, 255, 0.35);
+  color: #063c2b;
 }
 
 .public-nav a[aria-current='page'] {
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.65);
   color: #063c2b;
+  box-shadow: 0 2px 8px rgba(83, 26, 48, 0.05);
 }
 
 .public-auth-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .public-get-started,
@@ -67,17 +79,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 20px;
-  border-radius: 8px;
-  font-weight: 900;
+  min-height: 48px;
+  padding: 0 26px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 15px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .public-get-started,
 .public-primary {
   background: #0c6a4b;
   color: #ffffff;
-  box-shadow: 0 16px 30px rgba(12, 106, 75, 0.18);
+  box-shadow: 0 8px 24px rgba(12, 106, 75, 0.28);
+}
+
+.public-get-started:hover,
+.public-primary:hover {
+  background: #09543a;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(12, 106, 75, 0.38);
 }
 
 .public-secondary {
@@ -170,11 +191,18 @@
   position: relative;
   z-index: 2;
   width: min(100%, 420px);
-  border-radius: 8px;
-  background: rgba(255, 247, 250, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 247, 250, 0.98);
   color: #07231b;
-  border: 1px solid rgba(255, 255, 255, 0.56);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 20px 50px -10px rgba(9, 54, 40, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(16px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.demo-payment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 60px -10px rgba(9, 54, 40, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
 .demo-payment-card {
@@ -376,11 +404,22 @@
 .features-grid article,
 .pricing-grid article {
   min-height: 210px;
-  padding: 24px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(12, 106, 75, 0.12);
-  box-shadow: 0 18px 44px rgba(52, 29, 39, 0.06);
+  padding: 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(12, 106, 75, 0.14);
+  box-shadow: 0 10px 30px rgba(52, 29, 39, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.steps-grid article:hover,
+.values-grid article:hover,
+.features-grid article:hover,
+.pricing-grid article:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(12, 106, 75, 0.28);
+  box-shadow: 0 18px 40px rgba(52, 29, 39, 0.09);
 }
 
 .steps-grid span,
@@ -416,15 +455,23 @@
 }
 
 .role-panels article {
-  padding: 28px;
-  border-radius: 8px;
+  padding: 32px;
+  border-radius: 18px;
   background: #073327;
   color: white;
+  box-shadow: 0 16px 40px rgba(7, 51, 39, 0.2);
+  transition: transform 0.25s ease;
+}
+
+.role-panels article:hover {
+  transform: translateY(-2px);
 }
 
 .role-panels article:nth-child(2) {
   background: #ffe1eb;
   color: #07231b;
+  border: 1px solid rgba(12, 106, 75, 0.12);
+  box-shadow: 0 16px 40px rgba(83, 26, 48, 0.08);
 }
 
 .role-panels span {
@@ -452,11 +499,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
   margin: 0 6vw 70px;
-  border-radius: 8px;
-  background: #073327;
+  padding: 44px 52px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #073327 0%, #0a4d38 100%);
   color: white;
+  box-shadow: 0 20px 50px rgba(7, 51, 39, 0.25);
 }
 
 .light-action {
