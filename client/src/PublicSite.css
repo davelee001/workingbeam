@@ -480,6 +480,23 @@
   box-shadow: 0 18px 40px rgba(52, 29, 39, 0.09);
 }
 
+.steps-grid article:hover {
+  background: linear-gradient(145deg, #e8f8ef, #d7f0e3);
+  border-color: rgba(12, 106, 75, 0.42);
+  box-shadow: 0 22px 52px rgba(12, 106, 75, 0.16);
+}
+
+.steps-grid article:hover span {
+  color: #ffffff;
+  background: #0c6a4b;
+  border-color: #0c6a4b;
+}
+
+.steps-grid article:nth-child(3):hover {
+  background: linear-gradient(145deg, #0c6a4b, #073f2e);
+  box-shadow: 0 26px 64px rgba(10, 51, 40, 0.28);
+}
+
 .steps-grid span,
 .values-grid span,
 .features-grid span {
