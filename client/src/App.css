@@ -118,6 +118,7 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .metrics .positive { color:var(--green); }
 .wallet-state { text-transform:capitalize; display:flex; align-items:center; gap:8px; }
 .wallet-state i { width:9px; height:9px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px var(--mint); }
+.mobile-priority-dashboard { display:none; }
 .dashboard-error { margin:-25px 0 25px; }
 .section-heading { display:flex; justify-content:space-between; align-items:end; margin-bottom:17px; }
 .section-heading h2 { font:700 20px 'Manrope'; margin:0 0 4px; }
@@ -349,6 +350,15 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
   .mobile-request-fab strong { width:34px; height:34px; display:grid; place-items:center; color:#0c5139; background:#e8fff3; border-radius:50%; font-size:24px; line-height:1; }
   .mobile-request-fab span { max-width:72px; font-size:11px; line-height:1.1; text-align:left; }
   .notifications { top:76px; right:10px; left:10px; width:auto; max-height:calc(100vh - 180px); }
+  .mobile-priority-dashboard { display:grid; gap:12px; margin-bottom:24px; }
+  .mobile-priority-dashboard button { display:grid; gap:6px; padding:18px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 30px rgba(74,37,51,.06); text-align:left; }
+  .mobile-priority-dashboard button:nth-child(4) { color:#effaf4; background:linear-gradient(135deg,#0a3328,#12503d); border-color:#1b5947; }
+  .mobile-priority-dashboard small { color:var(--green-strong); font-size:10px; font-weight:900; letter-spacing:.8px; text-transform:uppercase; }
+  .mobile-priority-dashboard button:nth-child(4) small,.mobile-priority-dashboard button:nth-child(4) span { color:#acd1c1; }
+  .mobile-priority-dashboard strong { font:700 24px 'Manrope'; }
+  .mobile-priority-dashboard em { color:#84928c; font:700 10px 'DM Sans'; }
+  .mobile-priority-dashboard span { color:var(--muted); font-size:12px; }
+  .dashboard:has(.mobile-priority-dashboard) .metrics,.dashboard:has(.mobile-priority-dashboard) .analytics-strip,.dashboard:has(.mobile-priority-dashboard) .section-heading,.dashboard:has(.mobile-priority-dashboard) .payments-grid { display:none; }
   .metrics,.analytics-strip { grid-template-columns:1fr; }.section-heading p { display:none; }.payment-card { padding:17px; }.payment-share { grid-template-columns:1fr; }.payment-share img { justify-self:center; width:96px; height:96px; }.form-row,.form-row.three { grid-template-columns:1fr; }.role-picker { grid-template-columns:1fr; }
   .screen-heading,.wallet-hero { align-items:start; flex-direction:column; padding:23px 20px; }.screen-heading h1,.wallet-hero h1 { font-size:25px; }.payment-overview,.settings-grid { grid-template-columns:1fr; }.payment-overview>div { padding:13px; }.payments-toolbar { align-items:stretch; flex-direction:column; }.payment-tools { flex-direction:column; align-items:stretch; }.payment-tools input,.payment-tools select { min-width:0; }.filter-tabs { overflow-x:auto; }.filter-tabs button { flex:0 0 auto; }.wallet-summary { grid-template-columns:1fr; }.wallet-hero .connection-pill { white-space:normal; }.transaction-row { grid-template-columns:36px 1fr auto; }.transaction-row code,.transaction-row>strong { display:none; }.wallet-badges { flex-wrap:wrap; }
 }
