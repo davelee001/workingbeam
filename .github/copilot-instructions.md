@@ -1,32 +1,34 @@
-# Working Beam - Structural Analysis Tool
+# WorkingBeam
 
-## Project Overview
-Full-stack web application for structural beam analysis and design supporting concrete (ACI 318) and steel (AISC) design codes.
+WorkingBeam is a privacy-focused freelancer payment and custodial escrow
+platform built around the Beam blockchain payment rail.
 
-## Tech Stack
-- **Backend**: Node.js/Express
-- **Frontend**: React
-- **Database**: Optional (for future data persistence)
+## Product boundaries
 
-## Development Checklist
+- WorkingBeam is not a structural engineering or beam-analysis project.
+- Do not add structural engineering calculations, ACI checks, AISC checks, beam diagrams, or design-code engines.
+- Escrow is custodial: do not describe the product as fully decentralized.
+- Beam provides wallet integration, private payment capability, and transaction confirmation.
 
-- [ ] Project Scaffolding Complete
-- [ ] Dependencies Installed
-- [ ] Server Configuration Done
-- [ ] Client Setup Complete
-- [ ] Design Calculation Engine Built
-- [ ] UI Components Created
-- [ ] Testing Setup Done
-- [ ] Documentation Updated
-- [ ] Development Server Running
+## Core users
 
-## Key Features to Implement
-1. Beam geometry input interface
-2. Material properties (concrete/steel)
-3. Load calculation engine
-4. Structural analysis (reactions, shear, bending moment)
-5. Design checks (flexural, shear, deflection)
-6. Output reports and diagrams
+- Freelancers
+- Clients
+- Administrators
 
-## Getting Started
-Run `npm run dev` from root directory to start both backend and frontend servers.
+## Core workflow
+
+1. Freelancer creates a payment request.
+2. Client approves the request.
+3. Client funds custodial escrow using Beam.
+4. Freelancer submits completed work.
+5. Client releases payment.
+6. Both parties receive transaction confirmation.
+
+## Engineering priorities
+
+- Protect wallet credentials and user data.
+- Never expose server secrets to the client.
+- Preserve server-side payment-state validation.
+- Add tests for financial actions.
+- Use the Beam mock wallet only in development.
