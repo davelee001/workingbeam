@@ -41,6 +41,16 @@ Every push and pull request runs the Node.js 20 CI workflow.
 
 ![Create account screen](docs/screenshots/create-account.png)
 
+### Landing page
+
+![Landing page hero](docs/screenshots/landing-hero.png)
+
+### Payment workflow
+
+![Payment workflow steps](docs/screenshots/workflow-steps.png)
+
+Screenshot image files should be stored in `docs/screenshots/` so GitHub can render them in this README.
+
 ## Priorities
 
 - Protect wallet credentials and user data.
