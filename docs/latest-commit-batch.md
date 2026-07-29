@@ -9,3 +9,7 @@ This file records the latest requested GitHub commit batch for WorkingBeam.
 ## Batch item 2
 
 - Kept local `.env` files out of the commit batch.
+
+## Batch item 3
+
+- Kept runtime logs out of the commit batch.
