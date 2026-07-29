@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: workingbeam-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: FORCE_HTTPS
+        value: "true"
+      - key: REQUIRE_EMAIL_VERIFICATION
+        value: "true"
+      - key: SUPABASE_STATE_ROW_ID
+        value: default
+      - key: BEAM_GROTH_PER_BEAM
+        value: "100000000"
+      - key: BEAM_TX_FEE_GROTH
+        value: "100000"
+      - key: VERIFICATION_CODE_PEPPER
+        generateValue: true
+      - key: WALLET_ENCRYPTION_KEY
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SMTP_URL
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: BEAM_WALLET_API_URL
+        sync: false
+      - key: BEAM_WALLET_API_KEY
+        sync: false
+      - key: BEAM_ESCROW_ADDRESS
+        sync: false
