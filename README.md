@@ -33,3 +33,9 @@ built around the Beam blockchain.
 - Add tests for all financial actions.
 - Use the Beam mock wallet only in development.
 - Do not implement structural engineering calculations.
+
+## Status
+
+WorkingBeam is maintained as a freelancer escrow/payment product, not a structural engineering tool.
+
+Last updated: 2026-07-29
