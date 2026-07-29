@@ -147,11 +147,14 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .counterparty { display:flex; align-items:center; gap:9px; padding:13px 0; border-top:1px solid var(--line); }
 .counterparty>div:last-child { display:grid; font-size:12px; }
 .counterparty small { color:var(--muted); }
-.payment-share { display:grid; grid-template-columns:1fr auto; gap:13px; align-items:center; margin:0 0 13px; padding:12px; background:#fff6f9; border:1px solid #efd3dd; border-radius:10px; }
+.payment-share { display:grid; grid-template-columns:auto 1fr; gap:13px; align-items:center; margin:0 0 13px; padding:12px; background:#fff6f9; border:1px solid #efd3dd; border-radius:10px; }
 .payment-share small { display:block; color:#7b6870; margin-bottom:5px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
 .payment-share code { display:block; max-width:100%; overflow:hidden; color:#4e3b43; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
-.payment-share img { width:78px; height:78px; padding:6px; background:#fff; border:1px solid #ecd7df; border-radius:9px; }
+.qr-focus { display:grid; justify-items:center; gap:6px; }
+.qr-focus img { width:82px; height:82px; padding:6px; background:#fff; border:1px solid #ecd7df; border-radius:9px; }
+.qr-focus strong { display:none; }
 .share-actions { display:flex; gap:7px; margin-top:9px; }
+.share-button { display:none; }
 .link-button { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
 .detail-note { background:#f3f7f5; border:1px solid #e0e9e4; border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:12px; }
 .detail-note p { color:var(--muted); margin:4px 0 0; word-break:break-word; }
@@ -361,6 +364,6 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
   .mobile-priority-dashboard em { color:#84928c; font:700 10px 'DM Sans'; }
   .mobile-priority-dashboard span { color:var(--muted); font-size:12px; }
   .dashboard:has(.mobile-priority-dashboard) .metrics,.dashboard:has(.mobile-priority-dashboard) .analytics-strip,.dashboard:has(.mobile-priority-dashboard) .section-heading,.dashboard:has(.mobile-priority-dashboard) .payments-grid { display:none; }
-  .metrics,.analytics-strip { grid-template-columns:1fr; }.section-heading p { display:none; }.payment-card { padding:17px; }.payment-share { grid-template-columns:1fr; }.payment-share img { justify-self:center; width:96px; height:96px; }.form-row,.form-row.three { grid-template-columns:1fr; }.role-picker { grid-template-columns:1fr; }
+  .metrics,.analytics-strip { grid-template-columns:1fr; }.section-heading p { display:none; }.payment-card { padding:17px; }.payment-share { grid-template-columns:1fr; padding:18px; border-radius:18px; background:linear-gradient(145deg,#fff7fa,#f4dfe8); }.qr-focus { padding:4px 0 8px; }.qr-focus small { color:var(--green-strong); font-size:12px; }.qr-focus img { justify-self:center; width:min(72vw,260px); height:min(72vw,260px); padding:12px; border-radius:18px; box-shadow:0 16px 45px rgba(74,37,51,.12); }.qr-focus strong { display:block; color:var(--ink); font:800 18px 'Manrope'; text-align:center; }.qr-focus strong span { color:#0b6045; }.payment-share>div:not(.qr-focus)>small,.payment-share code,.link-button { display:none; }.share-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }.share-button { display:inline-flex; justify-content:center; }.share-actions button { padding:13px 12px; font-size:13px; }.form-row,.form-row.three { grid-template-columns:1fr; }.role-picker { grid-template-columns:1fr; }
   .screen-heading,.wallet-hero { align-items:start; flex-direction:column; padding:23px 20px; }.screen-heading h1,.wallet-hero h1 { font-size:25px; }.payment-overview,.settings-grid { grid-template-columns:1fr; }.payment-overview>div { padding:13px; }.payments-toolbar { align-items:stretch; flex-direction:column; }.payment-tools { flex-direction:column; align-items:stretch; }.payment-tools input,.payment-tools select { min-width:0; }.filter-tabs { overflow-x:auto; }.filter-tabs button { flex:0 0 auto; }.wallet-summary { grid-template-columns:1fr; }.wallet-hero .connection-pill { white-space:normal; }.transaction-row { grid-template-columns:36px 1fr auto; }.transaction-row code,.transaction-row>strong { display:none; }.wallet-badges { flex-wrap:wrap; }
 }
