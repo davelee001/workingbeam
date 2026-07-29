@@ -532,6 +532,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
     return { ...transaction, paymentTitle: payment?.title ?? (transaction.kind === 'send' ? 'Direct send' : 'Wallet activity') };
   });
   const confirmedTransactions = transactions.filter((transaction) => transaction.status === 'confirmed');
+  const recentTransactions = [...transactions].sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()).slice(0, 3);
   const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed','failed'].includes(payment.status));
   const historyPayments = payments.filter((payment) => ['released','cancelled','failed','expired'].includes(payment.status) || payment.transactions.length > 0);
   const filteredPayments = payments.filter((payment) => {
@@ -592,6 +593,12 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
 
         {screen === 'overview' && <>
           <section className="welcome"><div><p className="eyebrow dark">{currentUser.role} workspace</p><h1>Good to see you, {currentUser.name.split(' ')[0]}.</h1><p>Here is what is happening with your work and payments.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="mobile-priority-dashboard" aria-label="Mobile dashboard priorities">
+            <button onClick={() => setScreen('wallet')}><small>Wallet balance</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>{walletMode === 'mock' ? 'Mock wallet' : 'Live wallet'}</span></button>
+            <button onClick={() => setScreen('payments')}><small>Pending payments</small><strong>{payments.filter((item) => ['pending','approved','funding_pending'].includes(item.status)).length}</strong><span>{pendingSpend.toLocaleString()} BEAM awaiting action</span></button>
+            <button onClick={() => setScreen('transactions')}><small>Recent transactions</small><strong>{recentTransactions.length}</strong><span>{recentTransactions[0] ? `${recentTransactions[0].amountBeam.toLocaleString()} BEAM · ${recentTransactions[0].status}` : 'No activity yet'}</span></button>
+            <button onClick={() => setScreen('escrow')}><small>Active escrow</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong><span>{activePayments.length} active request{activePayments.length === 1 ? '' : 's'}</span></button>
+          </section>
           <section className="metrics">
             <div><small>Total requested</small><strong>{total.toLocaleString()} <em>BEAM</em></strong><span>Across {payments.length} request{payments.length === 1 ? '' : 's'}</span></div>
             <div><small>Protected in escrow</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong><span className="positive">Funds secured</span></div>
