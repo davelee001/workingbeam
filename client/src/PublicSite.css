@@ -102,9 +102,17 @@
 }
 
 .public-secondary {
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(12, 106, 75, 0.18);
-  color: #0a4d38;
+  background: linear-gradient(135deg, #f6bfd2, #eaa0bc);
+  border: 1px solid rgba(151, 45, 84, 0.18);
+  color: #5c1833;
+  box-shadow: 0 12px 26px rgba(151, 45, 84, 0.18);
+}
+
+.public-secondary:hover {
+  background: linear-gradient(135deg, #ffd5e3, #efacc5);
+  color: #421126;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(151, 45, 84, 0.24);
 }
 
 .public-menu-button {
