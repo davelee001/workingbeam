@@ -78,6 +78,21 @@ Required Render environment values:
 
 Screenshot image files should be stored in `docs/screenshots/` so GitHub can render them in this README.
 
+## Mobile experience
+
+Mobile users get a bottom navigation bar for Home, Payments, Requests, Notifications, and Profile.
+
+Freelancers also get a floating Request Payment action that opens the payment request form in one tap.
+
+The mobile Overview prioritizes:
+
+- Wallet balance
+- Pending payments
+- Recent transactions
+- Active escrow
+
+Secondary detail remains available through dedicated screens.
+
 ## Priorities
 
 - Protect wallet credentials and user data.
@@ -91,8 +106,5 @@ Screenshot image files should be stored in `docs/screenshots/` so GitHub can ren
 ## Status
 
 WorkingBeam is maintained as a freelancer custodial escrow/payment product, not a structural engineering tool.
-
-Mobile users get a bottom navigation bar for Home, Payments, Requests, Notifications, and Profile, plus a floating Request Payment action for freelancers.
-The mobile Overview prioritizes wallet balance, pending payments, recent transactions, and active escrow while moving secondary detail into dedicated screens.
 
 Last updated: 2026-07-29
