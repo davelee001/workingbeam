@@ -392,7 +392,22 @@
 }
 
 .centered-section {
+  position: relative;
+  overflow: hidden;
   text-align: center;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(12, 106, 75, 0.08), transparent 28%),
+    radial-gradient(circle at 90% 18%, rgba(196, 77, 119, 0.11), transparent 28%),
+    linear-gradient(180deg, #fff5f8 0%, #f7e7ed 100%);
+}
+
+.centered-section::before {
+  content: '';
+  position: absolute;
+  inset: 24px;
+  pointer-events: none;
+  border: 1px solid rgba(12, 106, 75, 0.06);
+  border-radius: 28px;
 }
 
 .centered-section h2,
@@ -416,6 +431,11 @@
   margin-top: 34px;
 }
 
+.steps-grid {
+  position: relative;
+  z-index: 1;
+}
+
 .steps-grid article,
 .values-grid article,
 .features-grid article,
@@ -427,6 +447,27 @@
   border: 1px solid rgba(12, 106, 75, 0.14);
   box-shadow: 0 10px 30px rgba(52, 29, 39, 0.05);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.steps-grid article {
+  display: grid;
+  align-content: center;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(253, 243, 247, 0.96));
+  border-color: rgba(93, 42, 59, 0.12);
+  box-shadow: 0 18px 45px rgba(52, 29, 39, 0.07);
+}
+
+.steps-grid article:nth-child(2),
+.steps-grid article:nth-child(4) {
+  background: linear-gradient(145deg, rgba(247, 255, 251, 0.94), rgba(232, 246, 239, 0.92));
+  border-color: rgba(12, 106, 75, 0.16);
+}
+
+.steps-grid article:nth-child(3) {
+  color: #f3fbf7;
+  background: linear-gradient(145deg, #0b3a2d, #126047);
+  border-color: rgba(141, 229, 188, 0.34);
+  box-shadow: 0 24px 60px rgba(10, 51, 40, 0.2);
 }
 
 .steps-grid article:hover,
@@ -444,6 +485,28 @@
 .features-grid span {
   color: #0e8f60;
   font-weight: 900;
+}
+
+.steps-grid span {
+  justify-self: center;
+  min-width: 42px;
+  padding: 8px 11px;
+  color: #0a5c40;
+  background: #e4f6ed;
+  border: 1px solid rgba(12, 106, 75, 0.18);
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.steps-grid article:nth-child(3) span {
+  color: #0b3a2d;
+  background: #ffd9e5;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.steps-grid article:nth-child(3) h3,
+.steps-grid article:nth-child(3) p {
+  color: #f3fbf7;
 }
 
 .steps-grid h3,
