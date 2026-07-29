@@ -93,6 +93,8 @@ The mobile Overview prioritizes:
 
 Secondary detail remains available through dedicated screens.
 
+Payment states use color-coded badges for Pending, Funded, Released, and Disputed.
+
 ## Priorities
 
 - Protect wallet credentials and user data.
