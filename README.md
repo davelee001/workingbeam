@@ -31,6 +31,16 @@ built around the Beam blockchain payment rail.
 
 Every push and pull request runs the Node.js 20 CI workflow.
 
+## Screenshots
+
+### Sign in
+
+![Sign in screen](docs/screenshots/sign-in.png)
+
+### Create account
+
+![Create account screen](docs/screenshots/create-account.png)
+
 ## Priorities
 
 - Protect wallet credentials and user data.
