@@ -49,3 +49,7 @@ This file records the latest requested GitHub commit batch for WorkingBeam.
 ## Batch item 12
 
 - Recorded that docs-only batch commits are used only when there are no real source changes waiting.
+
+## Batch item 13
+
+- Confirmed ignored runtime state remains available locally without entering GitHub history.
