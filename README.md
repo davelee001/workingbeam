@@ -92,4 +92,6 @@ Screenshot image files should be stored in `docs/screenshots/` so GitHub can ren
 
 WorkingBeam is maintained as a freelancer custodial escrow/payment product, not a structural engineering tool.
 
+Mobile users get a bottom navigation bar for Home, Payments, Requests, Notifications, and Profile, plus a floating Request Payment action for freelancers.
+
 Last updated: 2026-07-29
