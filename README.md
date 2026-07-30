@@ -97,6 +97,7 @@ Secondary detail remains available through dedicated screens.
 
 Payment states use color-coded badges for Pending, Funded, Released, and Disputed.
 On mobile payment request cards, the QR code is the primary focus with amount, Share, and Copy Link actions.
+Payment request cards include a five-step workflow stepper: Request Created, Client Paid, Work Submitted, Release Payment, and Complete.
 The public workflow section uses professional green/pink color hierarchy with the custodial Protect step visually highlighted.
 Workflow cards highlight green on hover so users can clearly see the active step.
 Public secondary call-to-action buttons use a pink Beam-inspired treatment to balance the dark green hero palette.
