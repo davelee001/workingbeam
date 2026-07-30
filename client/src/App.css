@@ -166,6 +166,8 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .workflow-step.complete b { color:#fff; background:#13a26f; box-shadow:0 0 0 3px #d4f2e2; }
 .workflow-step.current { color:#7d5a05; background:#fff7dc; border-color:#efd47d; }
 .workflow-step.current b { color:#5a3d00; background:#ffe49a; box-shadow:0 0 0 3px #fff2c8; }
+.workflow-step.current { transform:translateY(-1px); box-shadow:0 12px 24px rgba(126,91,5,.12); }
+.workflow-step.upcoming { opacity:.86; }
 .workflow-step.blocked { color:#9a2435; background:#fff0f4; border-color:#efb4c2; }
 .workflow-step.blocked b { color:#9a2435; background:#ffd7e1; }
 .card-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
