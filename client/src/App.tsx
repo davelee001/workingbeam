@@ -162,6 +162,7 @@ interface WorkflowStep {
   label: string;
   symbol: string;
   state: WorkflowStepState;
+  assistiveText: string;
 }
 
 const workflowStepLabels = ['Request Created', 'Client Paid', 'Work Submitted', 'Release Payment', 'Complete'] as const;
@@ -179,10 +180,10 @@ function workflowSteps(payment: PaymentRequest): WorkflowStep[] {
   const progressIndex = workflowProgressIndex(payment.status);
   const isTerminalProblem = ['failed', 'expired', 'cancelled', 'disputed'].includes(payment.status);
   return workflowStepLabels.map((label, index) => {
-    if (isTerminalProblem && index > progressIndex) return { label, symbol: '□', state: 'blocked' };
-    if (payment.status === 'released' || index < progressIndex) return { label, symbol: '✓', state: 'complete' };
-    if (index === progressIndex) return { label, symbol: '⏳', state: 'current' };
-    return { label, symbol: '□', state: 'upcoming' };
+    if (isTerminalProblem && index > progressIndex) return { label, symbol: '□', state: 'blocked', assistiveText: `${label}: blocked` };
+    if (payment.status === 'released' || index < progressIndex) return { label, symbol: '✓', state: 'complete', assistiveText: `${label}: complete` };
+    if (index === progressIndex) return { label, symbol: '⏳', state: 'current', assistiveText: `${label}: current step` };
+    return { label, symbol: '□', state: 'upcoming', assistiveText: `${label}: upcoming` };
   });
 }
 
@@ -369,7 +370,7 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
       {payment.status === 'failed' && <div className="detail-note danger"><strong>Payment failed</strong><p>Review the wallet transaction and create or fund a replacement request when ready.</p></div>}
       {payment.status === 'expired' && <div className="detail-note"><strong>Request expired</strong><p>This request passed its due date before approval or funding.</p></div>}
       <div className="workflow-stepper" aria-label={`Payment workflow progress: ${statusLabels[payment.status]}`}>
-        {steps.map((step) => <span key={step.label} className={`workflow-step ${step.state}`}><b aria-hidden="true">{step.symbol}</b>{step.label}</span>)}
+        {steps.map((step) => <span key={step.label} className={`workflow-step ${step.state}`} aria-label={step.assistiveText}><b aria-hidden="true">{step.symbol}</b>{step.label}</span>)}
       </div>
       <div className="card-actions">
         {user.role === 'client' && payment.status === 'pending' && <button className="primary" onClick={() => onAction('approve', payment)}>Approve request</button>}
