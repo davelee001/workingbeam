@@ -162,6 +162,12 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .workflow-stepper { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin:16px 0 22px; padding:10px; background:linear-gradient(135deg,#fff7fa,#f4fbf7); border:1px solid #ead4dd; border-radius:14px; }
 .workflow-step { display:grid; justify-items:center; align-content:center; gap:5px; min-height:66px; padding:8px 6px; color:#72827a; background:#fff; border:1px solid #e4ebe7; border-radius:12px; font-size:10px; font-weight:800; text-align:center; letter-spacing:.15px; }
 .workflow-step b { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; color:#7c8b84; background:#edf3f0; font-size:13px; line-height:1; }
+.workflow-step.complete { color:#0b6f4b; background:#edf9f3; border-color:#bfe9d3; }
+.workflow-step.complete b { color:#fff; background:#13a26f; box-shadow:0 0 0 3px #d4f2e2; }
+.workflow-step.current { color:#7d5a05; background:#fff7dc; border-color:#efd47d; }
+.workflow-step.current b { color:#5a3d00; background:#ffe49a; box-shadow:0 0 0 3px #fff2c8; }
+.workflow-step.blocked { color:#9a2435; background:#fff0f4; border-color:#efb4c2; }
+.workflow-step.blocked b { color:#9a2435; background:#ffd7e1; }
 .card-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .card-actions button { font-size:11px; padding:9px 12px; }
 .text-danger { border:0; background:none; color:var(--danger); font-weight:600; margin-left:auto; }
