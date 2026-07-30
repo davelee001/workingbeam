@@ -329,6 +329,7 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
 }) {
   const pendingTransaction = payment.transactions.find((transaction) => transaction.status === 'pending');
   const link = paymentLink(payment);
+  const steps = workflowSteps(payment);
   const copyText = async (value: string, label: string) => {
     await navigator.clipboard?.writeText(value);
     onToast(`${label} copied`);
@@ -367,8 +368,8 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
       {payment.disputeReason && <div className="detail-note danger"><strong>Dispute</strong><p>{payment.disputeReason}</p></div>}
       {payment.status === 'failed' && <div className="detail-note danger"><strong>Payment failed</strong><p>Review the wallet transaction and create or fund a replacement request when ready.</p></div>}
       {payment.status === 'expired' && <div className="detail-note"><strong>Request expired</strong><p>This request passed its due date before approval or funding.</p></div>}
-      <div className="timeline">
-        <span className="done">Requested</span><span className={payment.status !== 'pending' ? 'done' : ''}>Approved</span><span className={['funded','work_submitted','release_pending','released'].includes(payment.status) ? 'done' : ''}>Funded</span><span className={['work_submitted','release_pending','released'].includes(payment.status) ? 'done' : ''}>Delivered</span><span className={payment.status === 'released' ? 'done' : ''}>Paid</span>
+      <div className="workflow-stepper" aria-label={`Payment workflow progress: ${statusLabels[payment.status]}`}>
+        {steps.map((step) => <span key={step.label} className={`workflow-step ${step.state}`}><b aria-hidden="true">{step.symbol}</b>{step.label}</span>)}
       </div>
       <div className="card-actions">
         {user.role === 'client' && payment.status === 'pending' && <button className="primary" onClick={() => onAction('approve', payment)}>Approve request</button>}
