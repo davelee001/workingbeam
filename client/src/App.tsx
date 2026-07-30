@@ -156,6 +156,36 @@ function downloadReceipt(payment: PaymentRequest): void {
   URL.revokeObjectURL(url);
 }
 
+type WorkflowStepState = 'complete' | 'current' | 'upcoming' | 'blocked';
+
+interface WorkflowStep {
+  label: string;
+  symbol: string;
+  state: WorkflowStepState;
+}
+
+const workflowStepLabels = ['Request Created', 'Client Paid', 'Work Submitted', 'Release Payment', 'Complete'] as const;
+
+function workflowProgressIndex(status: PaymentStatus): number {
+  if (['pending', 'approved', 'funding_pending'].includes(status)) return 0;
+  if (status === 'funded') return 1;
+  if (['work_submitted', 'release_pending'].includes(status)) return 2;
+  if (status === 'released') return 4;
+  if (['failed', 'expired', 'cancelled', 'disputed'].includes(status)) return 0;
+  return 0;
+}
+
+function workflowSteps(payment: PaymentRequest): WorkflowStep[] {
+  const progressIndex = workflowProgressIndex(payment.status);
+  const isTerminalProblem = ['failed', 'expired', 'cancelled', 'disputed'].includes(payment.status);
+  return workflowStepLabels.map((label, index) => {
+    if (isTerminalProblem && index > progressIndex) return { label, symbol: '□', state: 'blocked' };
+    if (payment.status === 'released' || index < progressIndex) return { label, symbol: '✓', state: 'complete' };
+    if (index === progressIndex) return { label, symbol: '⏳', state: 'current' };
+    return { label, symbol: '□', state: 'upcoming' };
+  });
+}
+
 function SkeletonCards() {
   return (
     <>
