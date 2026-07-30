@@ -159,12 +159,9 @@ input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 3px rgb
 .detail-note { background:#f3f7f5; border:1px solid #e0e9e4; border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:12px; }
 .detail-note p { color:var(--muted); margin:4px 0 0; word-break:break-word; }
 .detail-note.danger { background:#fff1f2; border-color:#efced1; }
-.timeline { display:flex; justify-content:space-between; position:relative; margin:15px 2px 22px; }
-.timeline::before { content:''; position:absolute; top:5px; left:6%; right:6%; height:1px; background:#d9e3de; }
-.timeline span { color:#99a49f; padding-top:16px; position:relative; z-index:1; font-size:9px; text-align:center; }
-.timeline span::before { content:''; position:absolute; width:8px; height:8px; border:2px solid white; background:#c4cec9; border-radius:50%; top:0; left:50%; transform:translateX(-50%); }
-.timeline span.done { color:#137751; }
-.timeline span.done::before { background:var(--green); box-shadow:0 0 0 2px #c8ebda; }
+.workflow-stepper { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin:16px 0 22px; padding:10px; background:linear-gradient(135deg,#fff7fa,#f4fbf7); border:1px solid #ead4dd; border-radius:14px; }
+.workflow-step { display:grid; justify-items:center; align-content:center; gap:5px; min-height:66px; padding:8px 6px; color:#72827a; background:#fff; border:1px solid #e4ebe7; border-radius:12px; font-size:10px; font-weight:800; text-align:center; letter-spacing:.15px; }
+.workflow-step b { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; color:#7c8b84; background:#edf3f0; font-size:13px; line-height:1; }
 .card-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .card-actions button { font-size:11px; padding:9px 12px; }
 .text-danger { border:0; background:none; color:var(--danger); font-weight:600; margin-left:auto; }
