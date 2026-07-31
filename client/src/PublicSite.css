@@ -440,11 +440,12 @@ body[data-theme='light'] .public-site {
 .centered-section {
   position: relative;
   overflow: hidden;
+  color: #09251d;
   text-align: center;
   background:
-    radial-gradient(circle at 12% 12%, rgba(12, 106, 75, 0.08), transparent 28%),
-    radial-gradient(circle at 90% 18%, rgba(196, 77, 119, 0.11), transparent 28%),
-    linear-gradient(180deg, #fff5f8 0%, #f7e7ed 100%);
+    radial-gradient(circle at 10% 18%, rgba(12, 106, 75, 0.11), transparent 25%),
+    radial-gradient(circle at 90% 18%, rgba(196, 77, 119, 0.14), transparent 28%),
+    linear-gradient(180deg, #fff7fa 0%, #f4dfe8 100%);
 }
 
 .centered-section::before {
@@ -452,8 +453,21 @@ body[data-theme='light'] .public-site {
   position: absolute;
   inset: 24px;
   pointer-events: none;
-  border: 1px solid rgba(12, 106, 75, 0.06);
+  border: 1px solid rgba(82, 34, 51, 0.1);
   border-radius: 28px;
+}
+
+.centered-section .public-eyebrow {
+  color: #007a55;
+}
+
+.centered-section h2 {
+  color: #082a21;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.centered-section .section-lead {
+  color: #435a51;
 }
 
 .centered-section h2,
