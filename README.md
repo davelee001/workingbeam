@@ -109,6 +109,7 @@ Users can switch to light mode from the authentication screen, public header, da
 Theme preference is saved locally so the selected mode remains after refresh.
 Primary actions and navigation controls use touch-friendly 44-48 px targets.
 Supported browsers can enable device unlock through passkeys, Face ID, or fingerprint prompts.
+Device unlock is a browser-supported convenience layer and normal email/password sign-in remains available.
 
 ## Priorities
 
