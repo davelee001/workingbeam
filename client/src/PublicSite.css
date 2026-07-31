@@ -1106,6 +1106,13 @@ body[data-theme='dark'] .steps-grid article:hover p {
     box-shadow: 0 12px 28px rgba(12, 106, 75, 0.24);
   }
 
+  .public-nav.open .primary-menu-auth:hover,
+  .public-nav.open .primary-menu-auth:focus-visible {
+    color: #073f2e;
+    background: #d8f7e7;
+    outline: 0;
+  }
+
   .landing-hero,
   .split-section,
   .about-story,
