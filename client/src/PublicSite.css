@@ -470,6 +470,23 @@ body[data-theme='light'] .public-site {
   color: #435a51;
 }
 
+body[data-theme='dark'] .centered-section {
+  color: #f2fbf6;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(28, 169, 111, 0.16), transparent 28%),
+    radial-gradient(circle at 90% 18%, rgba(231, 146, 180, 0.16), transparent 28%),
+    linear-gradient(180deg, #071711 0%, #0b241b 100%);
+}
+
+body[data-theme='dark'] .centered-section h2 {
+  color: #f4fff8;
+  text-shadow: none;
+}
+
+body[data-theme='dark'] .centered-section .section-lead {
+  color: #b7cec3;
+}
+
 .centered-section h2,
 .split-copy h2,
 .about-story h2,
