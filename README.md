@@ -107,6 +107,7 @@ Public secondary call-to-action buttons use a pink Beam-inspired treatment to ba
 WorkingBeam defaults to a dark Beam-inspired interface.
 Users can switch to light mode from the authentication screen, public header, dashboard header, or settings.
 Theme preference is saved locally so the selected mode remains after refresh.
+Primary actions and navigation controls use touch-friendly 44-48 px targets.
 
 ## Priorities
 
