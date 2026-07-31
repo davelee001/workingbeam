@@ -102,6 +102,10 @@ The public workflow section uses professional green/pink color hierarchy with th
 Workflow cards highlight green on hover so users can clearly see the active step.
 Public secondary call-to-action buttons use a pink Beam-inspired treatment to balance the dark green hero palette.
 
+## Security and appearance
+
+WorkingBeam defaults to a dark Beam-inspired interface.
+
 ## Priorities
 
 - Protect wallet credentials and user data.
