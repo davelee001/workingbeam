@@ -559,14 +559,14 @@ body[data-theme='dark'] .centered-section .section-lead {
 
 .steps-grid article:hover {
   color: #f3fbf7;
-  background: linear-gradient(145deg, #fe52ff, #ab37e6);
-  border-color: rgba(254, 82, 255, 0.52);
-  box-shadow: 0 24px 60px rgba(190, 44, 189, 0.34);
+  background: linear-gradient(145deg, #0c6a4b, #073f2e);
+  border-color: rgba(141, 229, 188, 0.46);
+  box-shadow: 0 24px 60px rgba(10, 51, 40, 0.3);
 }
 
 .steps-grid article:hover span {
-  color: #35103d;
-  background: #ffd6ff;
+  color: #073f2e;
+  background: #d8f7e7;
   border-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -576,8 +576,8 @@ body[data-theme='dark'] .centered-section .section-lead {
 }
 
 .steps-grid article:nth-child(3):hover {
-  background: linear-gradient(145deg, #ff73ff, #fe52ff);
-  box-shadow: 0 26px 64px rgba(254, 82, 255, 0.32);
+  background: linear-gradient(145deg, #13a26f, #075b40);
+  box-shadow: 0 26px 64px rgba(10, 51, 40, 0.34);
 }
 
 .steps-grid span,
@@ -650,8 +650,8 @@ body[data-theme='dark'] .steps-grid article:nth-child(3) span {
 
 body[data-theme='dark'] .steps-grid article:hover {
   color: #f7fff9;
-  background: linear-gradient(145deg, #fe52ff, #ab37e6);
-  border-color: rgba(254, 82, 255, 0.58);
+  background: linear-gradient(145deg, #0f7a58, #073f2e);
+  border-color: rgba(141, 229, 188, 0.58);
   box-shadow: 0 28px 68px rgba(0, 0, 0, 0.34);
 }
 
