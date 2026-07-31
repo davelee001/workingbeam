@@ -1142,6 +1142,14 @@ body[data-theme='dark'] .steps-grid article:hover p {
 }
 
 @media (max-width: 640px) {
+  .public-header {
+    padding: 14px 18px;
+  }
+
+  .public-nav.open {
+    margin-top: 12px;
+  }
+
   .landing-copy h1,
   .public-page-intro h1 {
     font-size: 42px;
