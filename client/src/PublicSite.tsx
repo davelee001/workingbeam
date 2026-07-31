@@ -29,8 +29,11 @@ function SiteHeader({ path, onNavigate, theme, onThemeToggle }: { path: PublicPa
     <nav className={menuOpen ? 'public-nav open' : 'public-nav'} aria-label="Public navigation">
       {navigation.map((item) => <PublicLink key={item.path} path={item.path} currentPath={path} onNavigate={go}>{item.label}</PublicLink>)}
       <button type="button" className="public-menu-theme" onClick={onThemeToggle}>Appearance: {theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>
+      <PublicLink path="/auth" onNavigate={go} className="public-menu-auth">Sign in</PublicLink>
+      <PublicLink path="/auth?mode=register" onNavigate={go} className="public-menu-auth primary-menu-auth">Get started</PublicLink>
     </nav>
     <div className="public-auth-actions">
+      <button type="button" className="public-theme-icon" aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} onClick={onThemeToggle}>{theme === 'dark' ? '☀' : '☾'}</button>
       <PublicLink path="/auth" onNavigate={go} className="public-signin">Sign in</PublicLink>
       <PublicLink path="/auth?mode=register" onNavigate={go} className="public-get-started">Get started</PublicLink>
     </div>

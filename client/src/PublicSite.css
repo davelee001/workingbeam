@@ -89,7 +89,8 @@
   font-weight: 900;
 }
 
-.public-menu-theme {
+.public-menu-theme,
+.public-menu-auth {
   display: none;
 }
 
@@ -97,6 +98,29 @@
 .public-menu-theme:hover {
   color: #063c2b;
   background: #e8fff3;
+}
+
+.public-theme-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: #ffd9e5;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 217, 229, 0.2);
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.public-theme-icon:hover {
+  color: #063c2b;
+  background: #ffd9e5;
+  border-color: rgba(255, 217, 229, 0.72);
+  transform: translateY(-1px);
 }
 
 .public-get-started,
@@ -996,6 +1020,25 @@ body[data-theme='dark'] .steps-grid article:hover p {
     background: rgba(255, 255, 255, 0.34);
     border-color: rgba(10, 77, 56, 0.14);
     border-radius: 10px;
+  }
+
+  .public-nav.open .public-menu-auth {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 12px;
+    color: #0a4d38;
+    background: rgba(255, 255, 255, 0.34);
+    border-radius: 10px;
+    font-weight: 900;
+  }
+
+  .public-nav.open .primary-menu-auth {
+    justify-content: center;
+    color: #fff;
+    background: #0c6a4b;
   }
 
   .landing-hero,
