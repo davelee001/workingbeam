@@ -650,9 +650,17 @@ body[data-theme='light'] .public-site {
   box-shadow: 0 20px 50px rgba(7, 51, 39, 0.25);
 }
 
-.light-action {
-  background: #ffffff;
-  color: #0b543d;
+.public-cta .light-action {
+  background: linear-gradient(135deg, #f7bfd3, #e792b4);
+  border: 1px solid rgba(255, 221, 233, 0.64);
+  color: #421126;
+  box-shadow: 0 16px 34px rgba(20, 6, 12, 0.22);
+}
+
+.public-cta .light-action:hover {
+  background: linear-gradient(135deg, #ffd8e6, #efa6c2);
+  color: #2d0d1d;
+  box-shadow: 0 20px 42px rgba(20, 6, 12, 0.3);
 }
 
 .architecture-flow,
