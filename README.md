@@ -83,6 +83,7 @@ Screenshot image files should be stored in `docs/screenshots/` so GitHub can ren
 Mobile users get a bottom navigation bar for Home, Payments, Requests, Notifications, and Profile.
 
 The public mobile Menu button includes a three-line hamburger icon before the word Menu.
+When opened, the mobile Menu button changes to a Close/X state and exposes Sign in, theme switching, and Get started actions.
 
 Freelancers also get a floating Request Payment action that opens the payment request form in one tap.
 
@@ -109,6 +110,7 @@ Users can switch to light mode from the authentication screen, public header, da
 Desktop public pages include a compact icon-only theme switch near the sign-in action.
 Mobile public menus include Sign in and Get started actions.
 Mobile users switch public-site appearance from inside the Menu dropdown.
+Desktop public navigation keeps authentication actions out of the header, leaving only the compact theme icon.
 Theme preference is saved locally so the selected mode remains after refresh.
 Primary actions and navigation controls use touch-friendly 44-48 px targets.
 Supported browsers can enable device unlock through passkeys, Face ID, or fingerprint prompts.
