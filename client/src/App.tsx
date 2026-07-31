@@ -9,6 +9,7 @@ type PaymentSort = 'newest' | 'oldest' | 'amountHigh' | 'amountLow' | 'dueSoon';
 type PaymentStatus = 'pending' | 'approved' | 'funding_pending' | 'funded' | 'work_submitted' | 'release_pending' | 'released' | 'disputed' | 'failed' | 'expired' | 'cancelled';
 type PaymentCurrency = 'USD' | 'EUR' | 'GBP' | 'SSP' | 'UGX' | 'KSH' | 'TSH' | 'SDG';
 type ToastKind = 'success' | 'error' | 'info';
+type ThemeMode = 'dark' | 'light';
 
 interface User {
   id: string;
@@ -213,16 +214,92 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
   return payload as T;
 }
 
-function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthenticated: (user: User, token: string) => void; initialRegistering?: boolean }) {
+const biometricCredentialKey = 'workingbeam_biometric_credential';
+const biometricSessionKey = 'workingbeam_biometric_session';
+
+function bufferToBase64Url(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBuffer(value: string): ArrayBuffer {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0)).buffer;
+}
+
+function randomChallenge(): Uint8Array {
+  const challenge = new Uint8Array(32);
+  crypto.getRandomValues(challenge);
+  return challenge;
+}
+
+function supportsBiometricUnlock(): boolean {
+  return Boolean(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+}
+
+function AuthScreen({ onAuthenticated, initialRegistering = false, theme, onThemeToggle }: { onAuthenticated: (user: User, token: string) => void; initialRegistering?: boolean; theme: ThemeMode; onThemeToggle: () => void }) {
   const [registering, setRegistering] = useState(initialRegistering);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+  const [biometricMessage, setBiometricMessage] = useState('');
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricAvailable] = useState(() => supportsBiometricUnlock());
+  const [biometricRegistered, setBiometricRegistered] = useState(() => Boolean(localStorage.getItem(biometricCredentialKey) && localStorage.getItem(biometricSessionKey)));
   const [form, setForm] = useState({
     name: '', email: '', password: '', role: 'freelancer' as Role, walletAddress: '', phone: '',
   });
+
+  const enableBiometricUnlock = async (nextUser: User, nextToken: string) => {
+    if (!biometricAvailable) return;
+    setBiometricLoading(true); setBiometricMessage('');
+    try {
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: randomChallenge(),
+          rp: { name: 'WorkingBeam' },
+          user: { id: new TextEncoder().encode(nextUser.id), name: nextUser.email, displayName: nextUser.name },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+          authenticatorSelection: { userVerification: 'preferred', residentKey: 'preferred' },
+          timeout: 60000,
+        },
+      }) as PublicKeyCredential | null;
+      if (!credential) return;
+      localStorage.setItem(biometricCredentialKey, bufferToBase64Url(credential.rawId));
+      localStorage.setItem(biometricSessionKey, nextToken);
+      setBiometricRegistered(true);
+      setBiometricMessage('Device unlock is ready for your next sign in.');
+    } catch {
+      setBiometricMessage('Device unlock was not enabled. You can still sign in with email and password.');
+    } finally { setBiometricLoading(false); }
+  };
+
+  const biometricSignIn = async () => {
+    setError(''); setMessage(''); setBiometricMessage(''); setBiometricLoading(true);
+    try {
+      const credentialId = localStorage.getItem(biometricCredentialKey);
+      const storedToken = localStorage.getItem(biometricSessionKey);
+      if (!credentialId || !storedToken) throw new Error('Set up device unlock after signing in once.');
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: randomChallenge(),
+          allowCredentials: [{ id: base64UrlToBuffer(credentialId), type: 'public-key' }],
+          userVerification: 'preferred',
+          timeout: 60000,
+        },
+      });
+      if (!assertion) throw new Error('Device unlock was cancelled.');
+      const result = await request<{ user: User }>('/api/auth/me', storedToken);
+      onAuthenticated(result.user, storedToken);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to use device unlock');
+    } finally { setBiometricLoading(false); }
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setMessage(''); setLoading(true);
@@ -231,7 +308,10 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
         const result = await request<{ requiresVerification: true; email: string } | { user: User; token: string }>('/api/auth/register', undefined, {
           method: 'POST', body: JSON.stringify(form),
         });
-        if ('token' in result) onAuthenticated(result.user, result.token);
+        if ('token' in result) {
+          onAuthenticated(result.user, result.token);
+          void enableBiometricUnlock(result.user, result.token);
+        }
         else {
           setVerificationEmail(result.email);
           setMessage(`We sent a six-digit verification code to ${result.email}.`);
@@ -241,6 +321,7 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
           method: 'POST', body: JSON.stringify({ email: form.email, password: form.password }),
         });
         onAuthenticated(result.user, result.token);
+        void enableBiometricUnlock(result.user, result.token);
       }
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === 'EMAIL_UNVERIFIED') {
@@ -257,6 +338,7 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
         method: 'POST', body: JSON.stringify({ email: verificationEmail, code: verificationCode }),
       });
       onAuthenticated(result.user, result.token);
+      void enableBiometricUnlock(result.user, result.token);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to verify email'); }
     finally { setLoading(false); }
   };
@@ -286,6 +368,9 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
       </section>
       <section className="auth-panel">
         <div className="auth-card">
+          <div className="auth-card-tools">
+            <button type="button" className="theme-toggle" onClick={onThemeToggle}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>
+          </div>
           {verificationEmail ? <>
             <p className="eyebrow dark">Secure your account</p>
             <h2>Verify your email</h2>
@@ -302,6 +387,10 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
           <p className="eyebrow dark">{registering ? 'Create your workspace' : 'Welcome back'}</p>
           <h2>{registering ? 'Start with WorkingBeam' : 'Sign in'}</h2>
           <p className="muted">{registering ? 'Your email and Beam receiving token are verified before the account is activated.' : 'Track escrow, delivery, and payment in one secure place.'}</p>
+          {!registering && biometricAvailable && <div className="biometric-panel">
+            <button type="button" className="secondary full biometric-button" disabled={biometricLoading || !biometricRegistered} onClick={() => void biometricSignIn()}>{biometricLoading ? 'Checking device...' : 'Use Face ID or fingerprint'}</button>
+            <small>{biometricRegistered ? 'Uses your device passkey or biometric prompt before opening your saved session.' : 'Sign in once to enable faster device unlock on this browser.'}</small>
+          </div>}
           <form onSubmit={submit}>
             {registering && <label>Full name<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Amina Deng" /></label>}
             <label>Email address<input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" /></label>
@@ -315,6 +404,7 @@ function AuthScreen({ onAuthenticated, initialRegistering = false }: { onAuthent
               <label>Phone <small>(optional)</small><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+211 ..." /></label>
             </>}
             {error && <div className="error-banner">{error}</div>}
+            {biometricMessage && <div className="success-banner">{biometricMessage}</div>}
             <button className="primary full" disabled={loading}>{loading ? 'Please wait…' : registering ? 'Create account' : 'Sign in'}</button>
           </form>
           <p className="auth-switch">{registering ? 'Already have an account?' : 'New to WorkingBeam?'} <button onClick={() => { setRegistering(!registering); setError(''); }}>{registering ? 'Sign in' : 'Create one'}</button></p>
@@ -386,7 +476,7 @@ function PaymentCard({ payment, user, onAction, onToast, onTransactionSelect }: 
   );
 }
 
-function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen = 'overview' }: { initialUser: User; token: string; onLogout: () => void; onUserUpdated: (user: User) => void; initialScreen?: DashboardScreen }) {
+function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen = 'overview', theme, onThemeToggle }: { initialUser: User; token: string; onLogout: () => void; onUserUpdated: (user: User) => void; initialScreen?: DashboardScreen; theme: ThemeMode; onThemeToggle: () => void }) {
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<Transaction[]>([]);
@@ -619,7 +709,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
           {currentUser.role === 'client' && <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}>History</button>}
           <button className={screen === 'escrow' ? 'active' : ''} onClick={() => setScreen('escrow')}>Escrow</button>
         </nav>
-        <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><div className="user-menu-wrap"><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setUserMenuOpen(!userMenuOpen)}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button>{userMenuOpen && <div className="user-menu"><button onClick={() => { setScreen('profile'); setUserMenuOpen(false); }}>Profile</button><button onClick={() => { setScreen('settings'); setUserMenuOpen(false); }}>Settings</button><button onClick={() => { setScreen('wallet'); setUserMenuOpen(false); }}>Wallet</button><button onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}>Sign out</button></div>}</div></div>
+        <div className="top-actions"><button className={screen === 'wallet' ? 'header-link active' : 'header-link'} onClick={() => setScreen('wallet')}>Wallet</button><button className={screen === 'settings' ? 'header-link active' : 'header-link'} onClick={() => setScreen('settings')}>Settings</button><button className="theme-toggle header-theme-toggle" onClick={onThemeToggle}>{theme === 'dark' ? 'Light' : 'Dark'}</button><button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>!{unread > 0 && <b>{unread}</b>}</button><div className="user-menu-wrap"><button className={screen === 'profile' ? 'profile profile-button active' : 'profile profile-button'} onClick={() => setUserMenuOpen(!userMenuOpen)}><div className="avatar">{currentUser.name.slice(0, 1)}</div><div><strong>{currentUser.name}</strong><small>{currentUser.role}</small></div></button>{userMenuOpen && <div className="user-menu"><button onClick={() => { setScreen('profile'); setUserMenuOpen(false); }}>Profile</button><button onClick={() => { setScreen('settings'); setUserMenuOpen(false); }}>Settings</button><button onClick={() => { setScreen('wallet'); setUserMenuOpen(false); }}>Wallet</button><button onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}>Sign out</button></div>}</div></div>
       </header>
       <nav className="mobile-bottom-nav" aria-label="Mobile workspace navigation">
         <button className={screen === 'overview' ? 'active' : ''} onClick={() => setScreen('overview')}><span>🏠</span>Home</button>
@@ -745,6 +835,8 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
             <article><small>Email</small><strong>{emailAvailable ? emailMode : 'Needs setup'}</strong><span>{emailMode === 'smtp' ? 'Production SMTP health is checked by the API.' : 'Console/memory email is development-only; configure SMTP for production.'}</span></article>
             <article><small>Push notifications</small><strong>{pushAvailable ? pushMode : 'Needs setup'}</strong><span>{pushMode === 'webhook' ? 'Push webhook provider is configured.' : 'Payment events include push intent; configure a provider for device delivery.'}</span></article>
             <article><small>Push tokens</small><strong>{currentUser.pushTokens?.length ?? 0}</strong><span><button className="inline-action" disabled={busy === 'push-token'} onClick={() => void registerPushToken()}>{busy === 'push-token' ? 'Saving…' : 'Register device token'}</button></span></article>
+            <article><small>Appearance</small><strong>{theme === 'dark' ? 'Dark default' : 'Light mode'}</strong><span><button className="inline-action" onClick={onThemeToggle}>{theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}</button></span></article>
+            <article><small>Device unlock</small><strong>Face ID / fingerprint ready</strong><span>Supported browsers can use a device passkey or biometric prompt for faster sign in after one normal login.</span></article>
             <article><small>SMS</small><strong>{smsAvailable ? smsMode : 'Needs setup'}</strong><span>{smsMode === 'webhook' ? 'SMS webhook provider is configured.' : 'Configure SMS webhook and phone numbers for text delivery.'}</span></article>
             <article><small>Notifications</small><strong>{notifications.length} events</strong><span>Payment, escrow, dispute, expiry, failure, delivery, and confirmation activity is tracked in-app.</span></article>
             <article className="preference-card"><small>Notification preferences</small><strong>Channels</strong><label><input type="checkbox" checked={notificationPrefs.inApp} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, inApp: event.target.checked })} /> In-app</label><label><input type="checkbox" checked={notificationPrefs.email} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, email: event.target.checked })} /> Email</label><label><input type="checkbox" checked={notificationPrefs.push} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, push: event.target.checked })} /> Push</label><label><input type="checkbox" checked={notificationPrefs.sms} onChange={(event) => setNotificationPrefs({ ...notificationPrefs, sms: event.target.checked })} /> SMS</label><span>Local preference preview; provider delivery still follows server configuration.</span></article>
@@ -814,6 +906,20 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(Boolean(token));
   const [route, setRoute] = useState(() => `${window.location.pathname}${window.location.search}`);
+  const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('workingbeam_theme') as ThemeMode | null) ?? 'dark');
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('workingbeam_theme', next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
 
   useEffect(() => {
     const syncRoute = () => setRoute(`${window.location.pathname}${window.location.search}`);
@@ -844,13 +950,13 @@ function App() {
     navigate('/auth');
   };
   if (checking) return <div className="loading-screen"><div className="brand">Working<span>Beam</span></div><i /></div>;
-  if (user && token) return <Dashboard initialUser={user} token={token} onLogout={logout} onUserUpdated={setUser} initialScreen={route.startsWith('/payment-requests/') ? 'payments' : 'overview'} />;
+  if (user && token) return <Dashboard initialUser={user} token={token} onLogout={logout} onUserUpdated={setUser} initialScreen={route.startsWith('/payment-requests/') ? 'payments' : 'overview'} theme={theme} onThemeToggle={toggleTheme} />;
   const [publicPath, queryString = ''] = route.split('?');
   if (publicPath === '/auth' || publicPath.startsWith('/payment-requests/')) {
-    return <AuthScreen onAuthenticated={authenticated} initialRegistering={new URLSearchParams(queryString).get('mode') === 'register'} />;
+    return <AuthScreen onAuthenticated={authenticated} initialRegistering={new URLSearchParams(queryString).get('mode') === 'register'} theme={theme} onThemeToggle={toggleTheme} />;
   }
   const knownPublicPaths: PublicPath[] = ['/', '/about', '/features', '/pricing', '/docs', '/contact'];
-  return <PublicSite path={knownPublicPaths.includes(publicPath as PublicPath) ? publicPath as PublicPath : '/'} onNavigate={navigate} />;
+  return <PublicSite path={knownPublicPaths.includes(publicPath as PublicPath) ? publicPath as PublicPath : '/'} onNavigate={navigate} theme={theme} onThemeToggle={toggleTheme} />;
 }
 
 export default App;
