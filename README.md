@@ -127,4 +127,4 @@ The public website follows the same dark-first visual identity with an optional 
 
 WorkingBeam is maintained as a freelancer custodial escrow/payment product, not a structural engineering tool.
 
-Last updated: 2026-07-30
+Last updated: 2026-07-31
