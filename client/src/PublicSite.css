@@ -219,6 +219,12 @@ body[data-theme='light'] .public-site {
   transform: translateY(-6px) rotate(-45deg);
 }
 
+.public-menu-button.open {
+  background: #d8f7e7;
+  color: #073f2e;
+  box-shadow: 0 10px 24px rgba(12, 106, 75, 0.18);
+}
+
 .landing-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(340px, 0.96fr);
