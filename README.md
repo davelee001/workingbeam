@@ -112,6 +112,7 @@ Supported browsers can enable device unlock through passkeys, Face ID, or finger
 Device unlock is a browser-supported convenience layer and normal email/password sign-in remains available.
 The Settings screen summarizes appearance and device-unlock readiness for workspace users.
 The public website follows the same dark-first visual identity with an optional light presentation.
+The mobile public call-to-action section uses a visible pink action button with larger tap sizing.
 
 ## Priorities
 
