@@ -77,17 +77,24 @@
   gap: 12px;
 }
 
-.public-theme-toggle {
+.public-theme-toggle,
+.public-menu-theme {
   min-height: 44px;
-  padding: 9px 14px;
-  color: #dff8ec;
-  background: rgba(17, 62, 47, 0.78);
-  border: 1px solid rgba(123, 220, 175, 0.24);
+  padding: 8px 12px;
+  color: #cde7dc;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
+  font-size: 12px;
   font-weight: 900;
 }
 
-.public-theme-toggle:hover {
+.public-menu-theme {
+  display: none;
+}
+
+.public-theme-toggle:hover,
+.public-menu-theme:hover {
   color: #063c2b;
   background: #e8fff3;
 }
@@ -865,6 +872,8 @@ body[data-theme='light'] .public-site {
 .footer-bottom {
   grid-column: 1 / -1;
   display: flex !important;
+  align-items: center;
+  gap: 14px;
   justify-content: space-between;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding-top: 18px;
@@ -890,9 +899,21 @@ body[data-theme='light'] .public-site {
     grid-column: 1 / -1;
     display: grid;
     justify-content: stretch;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.45);
     border-radius: 8px;
     padding: 8px;
+  }
+
+  .public-nav.open .public-menu-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    color: #0a4d38;
+    background: rgba(255, 255, 255, 0.34);
+    border-color: rgba(10, 77, 56, 0.14);
+    border-radius: 10px;
   }
 
   .landing-hero,
