@@ -2,6 +2,7 @@ import React, { FormEvent, ReactNode, useState } from 'react';
 import './PublicSite.css';
 
 export type PublicPath = '/' | '/about' | '/features' | '/pricing' | '/docs' | '/contact';
+type ThemeMode = 'dark' | 'light';
 
 const navigation: Array<{ path: PublicPath; label: string }> = [
   { path: '/', label: 'Home' },
@@ -19,7 +20,7 @@ function PublicLink({ path, currentPath, onNavigate, children, className = '' }:
   return <a className={className} href={path} aria-current={currentPath === path ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate(path); }}>{children}</a>;
 }
 
-function SiteHeader({ path, onNavigate }: { path: PublicPath; onNavigate: (path: string) => void }) {
+function SiteHeader({ path, onNavigate, theme, onThemeToggle }: { path: PublicPath; onNavigate: (path: string) => void; theme: ThemeMode; onThemeToggle: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const go = (nextPath: string) => { setMenuOpen(false); onNavigate(nextPath); };
   return <header className="public-header">
@@ -29,6 +30,7 @@ function SiteHeader({ path, onNavigate }: { path: PublicPath; onNavigate: (path:
       {navigation.map((item) => <PublicLink key={item.path} path={item.path} currentPath={path} onNavigate={go}>{item.label}</PublicLink>)}
     </nav>
     <div className="public-auth-actions">
+      <button type="button" className="theme-toggle public-theme-toggle" onClick={onThemeToggle}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>
       <PublicLink path="/auth" onNavigate={go} className="public-signin">Sign in</PublicLink>
       <PublicLink path="/auth?mode=register" onNavigate={go} className="public-get-started">Get started</PublicLink>
     </div>
@@ -151,7 +153,7 @@ function ContactPage() {
   return <><PageIntro eyebrow="Contact" title="Tell us what you want to build or protect." description="Questions about the product, Beam integration, deployment, or the beta workflow are welcome." /><section className="public-section contact-layout"><div className="contact-details"><p className="public-eyebrow">Start a conversation</p><h2>We will route your message to the right place.</h2><p>Share enough context for us to understand whether you are evaluating WorkingBeam as a freelancer, client, team, or technical integrator.</p><div><span>Product and beta</span><strong>Product feedback, early access, and workflow questions</strong></div><div><span>Technical integration</span><strong>Beam Wallet API, deployment, and architecture</strong></div><div><span>Security</span><strong>Responsible disclosure and platform safeguards</strong></div></div><form className="contact-form" onSubmit={submit}><div className="contact-form-row"><label>Name<input required minLength={2} maxLength={80} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Your name" /></label><label>Email<input required type="email" maxLength={160} value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" /></label></div><label>Company <small>(optional)</small><input maxLength={120} value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Company or project" /></label><label>Topic<select value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })}><option value="product">Product and beta</option><option value="integration">Technical integration</option><option value="security">Security</option><option value="partnership">Partnership</option></select></label><label className="contact-honeypot" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></label><label>Message<textarea required minLength={20} maxLength={2000} value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} placeholder="How can we help?" /></label>{error && <div className="error-banner">{error}</div>}{status === 'sent' && <div className="success-banner">Thanks - your message has been received.</div>}<button className="public-primary contact-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Sending...' : 'Send message'}</button></form></section></>;
 }
 
-export function PublicSite({ path, onNavigate }: { path: PublicPath; onNavigate: (path: string) => void }) {
+export function PublicSite({ path, onNavigate, theme, onThemeToggle }: { path: PublicPath; onNavigate: (path: string) => void; theme: ThemeMode; onThemeToggle: () => void }) {
   let page: ReactNode;
   if (path === '/about') page = <AboutPage />;
   else if (path === '/features') page = <FeaturesPage />;
@@ -159,5 +161,5 @@ export function PublicSite({ path, onNavigate }: { path: PublicPath; onNavigate:
   else if (path === '/docs') page = <DocumentationPage />;
   else if (path === '/contact') page = <ContactPage />;
   else page = <LandingPage onNavigate={onNavigate} />;
-  return <div className="public-site"><SiteHeader path={path} onNavigate={onNavigate} /><main>{page}</main><SiteFooter onNavigate={onNavigate} /></div>;
+  return <div className="public-site"><SiteHeader path={path} onNavigate={onNavigate} theme={theme} onThemeToggle={onThemeToggle} /><main>{page}</main><SiteFooter onNavigate={onNavigate} /></div>;
 }
