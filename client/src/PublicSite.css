@@ -1025,6 +1025,8 @@ body[data-theme='dark'] .steps-grid article:hover p {
     grid-column: 1 / -1;
     display: grid;
     justify-content: stretch;
+    justify-self: end;
+    width: min(100%, 420px);
     gap: 8px;
     margin-top: 14px;
     padding: 12px;
