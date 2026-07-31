@@ -1094,7 +1094,8 @@ body[data-theme='dark'] .steps-grid article:hover p {
   }
 
   .public-nav.open .public-menu-auth:first-of-type {
-    margin-top: 6px;
+    margin-top: 8px;
+    border-top-color: rgba(255, 217, 229, 0.18);
   }
 
   .public-nav.open .primary-menu-auth {
