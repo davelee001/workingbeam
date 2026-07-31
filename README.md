@@ -105,6 +105,7 @@ Public secondary call-to-action buttons use a pink Beam-inspired treatment to ba
 ## Security and appearance
 
 WorkingBeam defaults to a dark Beam-inspired interface.
+Users can switch to light mode from the authentication screen, public header, dashboard header, or settings.
 
 ## Priorities
 
