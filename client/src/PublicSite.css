@@ -1071,6 +1071,14 @@ body[data-theme='dark'] .steps-grid article:hover p {
     font-size: 19px;
   }
 
+  .public-nav.open .public-menu-theme:hover,
+  .public-nav.open .public-menu-theme:focus-visible {
+    color: #073f2e;
+    background: #ffd9e5;
+    outline: 0;
+    transform: translateY(-1px);
+  }
+
   .public-nav.open .public-menu-auth {
     display: inline-flex;
     align-items: center;
