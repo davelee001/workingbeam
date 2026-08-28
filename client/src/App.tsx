@@ -249,6 +249,7 @@ function AuthScreen({ onAuthenticated, initialRegistering = false, theme, onThem
   const [verificationCode, setVerificationCode] = useState('');
   const [biometricMessage, setBiometricMessage] = useState('');
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<Role | null>(null);
   const [biometricAvailable] = useState(() => supportsBiometricUnlock());
   const [biometricRegistered, setBiometricRegistered] = useState(() => Boolean(localStorage.getItem(biometricCredentialKey) && localStorage.getItem(biometricSessionKey)));
   const [form, setForm] = useState({
@@ -331,6 +332,19 @@ function AuthScreen({ onAuthenticated, initialRegistering = false, theme, onThem
     } finally { setLoading(false); }
   };
 
+  const startDemo = async (role: Role) => {
+    setError(''); setMessage(''); setBiometricMessage(''); setDemoLoading(role);
+    try {
+      const email = role === 'freelancer' ? 'adeng@mail.com' : 'bol.client@mail.com';
+      const result = await request<{ user: User; token: string }>('/api/auth/login', undefined, {
+        method: 'POST', body: JSON.stringify({ email, password: 'Password123!' }),
+      });
+      onAuthenticated(result.user, result.token);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to start the demo');
+    } finally { setDemoLoading(null); }
+  };
+
   const verifyEmail = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
     try {
@@ -407,6 +421,19 @@ function AuthScreen({ onAuthenticated, initialRegistering = false, theme, onThem
             {biometricMessage && <div className="success-banner">{biometricMessage}</div>}
             <button className="primary full" disabled={loading}>{loading ? 'Please wait…' : registering ? 'Create account' : 'Sign in'}</button>
           </form>
+          {!registering && <div className="demo-login">
+            <div className="auth-divider"><span>or explore the demo</span></div>
+            <div className="demo-actions">
+              <button type="button" className="demo-button freelancer" disabled={loading || demoLoading !== null} onClick={() => void startDemo('freelancer')}>
+                <strong>{demoLoading === 'freelancer' ? 'Opening demo...' : 'Demo as Freelancer'}</strong>
+                <small>Request work payments</small>
+              </button>
+              <button type="button" className="demo-button client" disabled={loading || demoLoading !== null} onClick={() => void startDemo('client')}>
+                <strong>{demoLoading === 'client' ? 'Opening demo...' : 'Demo as Client'}</strong>
+                <small>Fund and release escrow</small>
+              </button>
+            </div>
+          </div>}
           <p className="auth-switch">{registering ? 'Already have an account?' : 'New to WorkingBeam?'} <button onClick={() => { setRegistering(!registering); setError(''); }}>{registering ? 'Sign in' : 'Create one'}</button></p>
           </>}
         </div>
@@ -665,6 +692,7 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
   });
   const confirmedTransactions = transactions.filter((transaction) => transaction.status === 'confirmed');
   const recentTransactions = [...transactions].sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()).slice(0, 3);
+  const latestTransactionId = recentTransactions[0]?.walletTransactionId;
   const outstandingPayments = payments.filter((payment) => ['pending','approved','funding_pending','funded','work_submitted','release_pending','disputed','failed'].includes(payment.status));
   const historyPayments = payments.filter((payment) => ['released','cancelled','failed','expired'].includes(payment.status) || payment.transactions.length > 0);
   const filteredPayments = payments.filter((payment) => {
@@ -725,11 +753,11 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
 
         {screen === 'overview' && <>
           <section className="welcome"><div><p className="eyebrow dark">{currentUser.role} workspace</p><h1>Good to see you, {currentUser.name.split(' ')[0]}.</h1><p>Here is what is happening with your work and payments.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
-          <section className="mobile-priority-dashboard" aria-label="Mobile dashboard priorities">
-            <button onClick={() => setScreen('wallet')}><small>Wallet balance</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>{walletMode === 'mock' ? 'Mock wallet' : 'Live wallet'}</span></button>
+          <section className="priority-dashboard" aria-label="Account and payment summary">
+            <button onClick={() => setScreen('wallet')}><small>Available balance</small><strong>{paid.toLocaleString()} <em>BEAM</em></strong><span>{walletMode === 'mock' ? 'Demo balance' : 'Available through Beam wallet'}</span></button>
             <button onClick={() => setScreen('payments')}><small>Pending payments</small><strong>{payments.filter((item) => ['pending','approved','funding_pending'].includes(item.status)).length}</strong><span>{pendingSpend.toLocaleString()} BEAM awaiting action</span></button>
-            <button onClick={() => setScreen('transactions')}><small>Recent transactions</small><strong>{recentTransactions.length}</strong><span>{recentTransactions[0] ? `${recentTransactions[0].amountBeam.toLocaleString()} BEAM · ${recentTransactions[0].status}` : 'No activity yet'}</span></button>
             <button onClick={() => setScreen('escrow')}><small>Active escrow</small><strong>{secured.toLocaleString()} <em>BEAM</em></strong><span>{activePayments.length} active request{activePayments.length === 1 ? '' : 's'}</span></button>
+            <button onClick={() => setScreen('transactions')}><small>Recent transactions</small><strong>{recentTransactions.length}</strong><span>{recentTransactions[0] ? `${recentTransactions[0].amountBeam.toLocaleString()} BEAM · ${recentTransactions[0].status}` : 'No activity yet'}</span></button>
           </section>
           <section className="metrics">
             <div><small>Total requested</small><strong>{total.toLocaleString()} <em>BEAM</em></strong><span>Across {payments.length} request{payments.length === 1 ? '' : 's'}</span></div>
@@ -749,6 +777,13 @@ function Dashboard({ initialUser, token, onLogout, onUserUpdated, initialScreen 
 
         {screen === 'payments' && <>
           <section className="screen-heading"><div><p className="eyebrow dark">Payment center</p><h1>Requests and escrow</h1><p>Manage approvals, delivery, disputes, and every on-chain confirmation.</p></div>{currentUser.role === 'freelancer' && <button className="primary" onClick={() => setShowCreate(true)}>+ New payment request</button>}</section>
+          <section className="beam-payment-identity" aria-label="Beam payment network details">
+            <div className="beam-identity-heading"><span>Powered by Beam</span><strong>Private transaction</strong><b>Network: Testnet</b></div>
+            <div className="beam-identity-details">
+              <div><small>Beam address</small><code title={currentUser.walletAddress}>{currentUser.walletAddress}</code></div>
+              <div><small>Transaction ID</small><code title={latestTransactionId ?? 'Created after funding begins'}>{latestTransactionId ?? 'Created after funding begins'}</code></div>
+            </div>
+          </section>
           <section className="payment-overview">
             <div><span>All requests</span><strong>{payments.length}</strong></div>
             <div><span>Active</span><strong>{payments.filter((item) => !['released','disputed','failed','expired','cancelled'].includes(item.status)).length}</strong></div>
