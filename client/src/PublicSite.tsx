@@ -34,6 +34,7 @@ function SiteHeader({ path, onNavigate, theme, onThemeToggle }: { path: PublicPa
     </nav>
     <div className="public-auth-actions">
       <button type="button" className="public-theme-icon" aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} onClick={onThemeToggle}>{theme === 'dark' ? '☀' : '☾'}</button>
+      <PublicLink path="/auth" onNavigate={go} className="public-signin">Sign in</PublicLink>
     </div>
   </header>;
 }
