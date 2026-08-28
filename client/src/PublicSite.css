@@ -94,6 +94,10 @@
   display: none;
 }
 
+.public-nav .public-menu-auth {
+  display: none;
+}
+
 .public-theme-toggle:hover,
 .public-menu-theme:hover {
   color: #063c2b;
@@ -1030,10 +1034,10 @@ body[data-theme='dark'] .steps-grid article:hover p {
     gap: 8px;
     margin-top: 14px;
     padding: 12px;
-    background: rgba(7, 34, 27, 0.96);
-    border: 1px solid rgba(157, 110, 255, 0.18);
+    background: linear-gradient(145deg, #f4fff9, #e2f6ed);
+    border: 1px solid rgba(141, 229, 188, 0.34);
     border-radius: 18px;
-    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+    box-shadow: 0 18px 46px rgba(7, 34, 27, 0.24);
   }
 
   .public-nav.open a {
@@ -1041,9 +1045,9 @@ body[data-theme='dark'] .steps-grid article:hover p {
     align-items: center;
     min-height: 48px;
     padding: 0 16px;
-    color: #eaf8f1;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #073f2e;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(12, 106, 75, 0.12);
     border-radius: 12px;
     font-weight: 900;
   }
@@ -1064,9 +1068,9 @@ body[data-theme='dark'] .steps-grid article:hover p {
     height: 48px;
     min-height: 48px;
     padding: 0;
-    color: #ffd9e5;
-    background: rgba(254, 82, 255, 0.08);
-    border-color: rgba(254, 82, 255, 0.2);
+    color: #9c1bab;
+    background: #fff4ff;
+    border-color: rgba(254, 82, 255, 0.24);
     border-radius: 50%;
     font-size: 19px;
   }
@@ -1086,9 +1090,9 @@ body[data-theme='dark'] .steps-grid article:hover p {
     width: 100%;
     min-height: 48px;
     padding: 0 16px;
-    color: #eaf8f1;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #073f2e;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(12, 106, 75, 0.12);
     border-radius: 12px;
     font-weight: 900;
   }
