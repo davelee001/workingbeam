@@ -89,10 +89,10 @@ Freelancers also get a floating Request Payment action that opens the payment re
 
 The mobile Overview prioritizes:
 
-- Wallet balance
+- Available balance
 - Pending payments
-- Recent transactions
 - Active escrow
+- Recent transactions
 
 Secondary detail remains available through dedicated screens.
 
@@ -119,18 +119,27 @@ The Settings screen summarizes appearance and device-unlock readiness for worksp
 The public website follows the same dark-first visual identity with an optional light presentation.
 The mobile public call-to-action section uses a visible pink action button with larger tap sizing.
 
-## Priorities
+## Presentation demo
+
+The mobile workspace is designed for a focused 20-30 second product walkthrough:
+
+1. Open the Overview to show available balance, pending payments, active escrow, and recent transactions.
+2. Use the bottom navigation to open Payments.
+3. Open a payment request to show its status badge, payment QR code, and five-step escrow workflow.
+4. Use the floating Request Payment action to demonstrate the freelancer workflow.
+
+## Security boundaries
 
 - Protect wallet credentials and user data.
 - Never expose server secrets to the client.
 - Preserve payment-state validation.
 - Add tests for all financial actions.
 - Use the Beam mock wallet only in development.
-- Do not implement structural engineering calculations.
-- Do not describe escrow as fully decentralized; it is custodial.
 
-## Status
+WorkingBeam uses custodial escrow. Beam provides the private payment and confirmation rail, while WorkingBeam controls the escrow lifecycle and release workflow.
 
-WorkingBeam is maintained as a freelancer custodial escrow/payment product, not a structural engineering tool.
+## Project status
 
-Last updated: 2026-07-31
+WorkingBeam is an MVP for protected freelancer payments using custodial escrow and the Beam payment rail.
+
+Last updated: 2026-08-30
