@@ -30,7 +30,7 @@ services:
       - key: WALLET_ENCRYPTION_KEY
         generateValue: true
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://workingbeam-demo.onrender.com
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -45,3 +45,18 @@ services:
         sync: false
       - key: BEAM_ESCROW_ADDRESS
         sync: false
+
+  - type: web
+    name: workingbeam-demo
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./build
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://workingbeam-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
