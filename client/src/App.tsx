@@ -200,8 +200,10 @@ class ApiError extends Error {
   constructor(message: string, readonly code?: string) { super(message); }
 }
 
+const apiBaseUrl = (process.env.REACT_APP_API_URL ?? '').replace(/\/$/, '');
+
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     headers: {
       ...(init.body ? { 'content-type': 'application/json' } : {}),
