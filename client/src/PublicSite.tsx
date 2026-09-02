@@ -3,6 +3,7 @@ import './PublicSite.css';
 
 export type PublicPath = '/' | '/about' | '/features' | '/pricing' | '/docs' | '/contact';
 type ThemeMode = 'dark' | 'light';
+const apiBaseUrl = (process.env.REACT_APP_API_URL ?? '').replace(/\/$/, '');
 
 const navigation: Array<{ path: PublicPath; label: string }> = [
   { path: '/', label: 'Home' },
@@ -146,7 +147,7 @@ function ContactPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setStatus('sending'); setError('');
     try {
-      const response = await fetch('/api/contact', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) });
+      const response = await fetch(`${apiBaseUrl}/api/contact`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? 'Unable to send message');
       setStatus('sent'); setForm({ name: '', email: '', company: '', subject: 'product', message: '', website: '' });
